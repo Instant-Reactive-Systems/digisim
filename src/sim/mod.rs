@@ -1,82 +1,66 @@
-use std::{
-    vec::Drain, 
-    collections::{HashMap, HashSet}
-};
-use crate::{
-    circuit::{ComponentId, Circuit}, 
-    component::{Registry, Component},
-    Connector,
-};
+mod event;
+mod wheel;
+mod config;
+pub use event::Event;
+pub use wheel::TimingWheel;
+pub use config::Config;
 
-pub type JsonValue = serde_json::Value;
+use crate::Circuit;
+use crate::circuit::{Registry, Connector, CircuitState};
+use std::collections::HashSet;
 
-pub struct Event {
-    pub value: bool,
-    pub src: Connector,
-}
-
-pub struct TimingWheel {
-    max_delay: u32,
-    current_time: u32,
-    wheel: Vec<Vec<Event>>,
-}
-
-pub struct CircuitState {
-    data: HashMap<ComponentId, JsonValue>,
-}
-
-pub struct Config {
-    pub max_delay: u32,
-}
-
+/// Simulation context
+///
+/// A single tick does not necessarily correspond to a single time unit.
+#[derive(Debug)]
 pub struct Simulation {
-    pub circuit: Option<Circuit>,
-    pub registry: Option<Registry>,
+    pub circuit: Circuit,
+    pub registry: Registry,
     pub wheel: TimingWheel,
     pub elapsed: u128,
 }
 
 impl Simulation {
+    /// Create a new simulation context.
     pub fn new(config: Config) -> Self {
         Self {
-            circuit: None,
-            registry: None,
+            circuit: Default::default(),
+            registry: Default::default(),
             wheel: TimingWheel::new(config.max_delay),
             elapsed: 0,
         }
     }
 
+    /// Processes the timing wheel.
     pub fn tick(&mut self) {
-        let mut circuit = self.circuit.unwrap();
-        let (elapsed, events) = self.wheel.advance();
-        self.elapsed += elapsed;
         let mut activity_set = HashSet::new();
 
+        // Advance the timing wheel and record the elapsed time
+        let (elapsed, events) = self.wheel.advance();
+        self.elapsed += elapsed as u128;
+
+        // Go through all the events, update the source component, 
+        // set and schedule its dependent components
         for event in events {
-            let mut component = circuit.components.get_mut(&event.src.component_id);
-            component.set_pin(event.src.pin_id, event.value);
+            let component = self.circuit.components.get_mut(&event.src.component).unwrap();
+            component.update(event);
             
-            for connector in circuit.connections[event.src].iter() {
-                let mut component = circuit.components.get_mut(&connector.component_id);
-                component.set_pin(connector.pin_id, event.value);
-                activity_set.insert(connector.component_id);
+            for to in self.circuit.connections[&event.src].iter() {
+                let component = self.circuit.components.get_mut(&to.component).unwrap();
+                component.set_pin(to.pin, event.value);
+                activity_set.insert(to.component);
             }
         }
 
-        for id in activity_set {
-            let component = circuit.components.get(&id);
-            
+        // Go through all scheduled components
+        for component_id in activity_set {
+            let component = self.circuit.components.get(&component_id).unwrap();
+
+            // If there were any changed outputs, schedule the event
             if let Some(output_diff) = component.evaluate() {
                 for (pin_id, value) in output_diff {
-                    let src = Connector {
-                        component_id: id,
-                        pin_id,
-                    };
-
-                    let event = Event {
-                        value,
-                        src,
-                    };
+                    let src = Connector::new(component_id, pin_id);
+                    let event = Event::new(value, src);
 
                     self.wheel.schedule(component.delay(), event);
                 }
@@ -84,64 +68,30 @@ impl Simulation {
         }
     }
 
+    /// Returns a JSON object containing the circuit state.
     pub fn circuit_state(&self) -> CircuitState {
-        let circuit = self.circuit.unwrap();
         let mut state = CircuitState::default();
-        for (id, component) in circuit.components.iter() {
+        for (&id, component) in self.circuit.components.iter() {
             state.data.insert(id, component.get_state());
         }
 
         state
     }
 
-    pub fn set_circuit(&mut self, circuit: JsonValue) {
+    pub fn set_circuit(&mut self, circuit: serde_json::Value) {
         unimplemented!()
     }
 
-    pub fn set_registry(&mut self, registry: JsonValue) {
+    pub fn set_registry(&mut self, registry: serde_json::Value) {
         unimplemented!()
     }
 
-    pub fn update_registry(&mut self, definition: JsonValue) {
+    pub fn update_registry(&mut self, definition: serde_json::Value) {
         unimplemented!()
     }
 
-    pub fn insert_input_event(&mut self, event: JsonValue) {
+    pub fn insert_input_event(&mut self, event: serde_json::Value) {
         unimplemented!()
-    }
-}
-
-impl TimingWheel {
-    pub fn new(max_delay: u32) -> Self {
-        Self {
-            max_delay,
-            current_time: 0,
-            wheel: vec![Default::default(); max_delay],
-        }
-    }
-
-    pub fn advance(&mut self) -> (u32, Drain<Event>) {
-        let mut cnt = 0;
-        while cnt != self.max_delay && self.wheel[self.current_time].is_empty() {
-            self.current_time += 1;
-            self.current_time %= self.max_delay;
-            cnt += 1;
-        }
-
-        (cnt, self.wheel[self.current_time].drain(..))
-    }
-
-    pub fn schedule(&mut self, delay: u32, event: Event) {
-        let scheduled_time = (self.current_time + delay) % self.max_delay;
-        self.wheel[scheduled_time].push(event);
-    }
-}
-
-impl Default for CircuitState {
-    fn default() -> Self {
-        Self {
-            data: Default::default(),
-        }
     }
 }
 
