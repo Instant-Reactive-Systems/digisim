@@ -1,5 +1,7 @@
 mod tristate;
+mod nand;
 pub use tristate::Tristate;
+pub use nand::Nand;
 
 use std::any::Any;
 use std::fmt::Debug;

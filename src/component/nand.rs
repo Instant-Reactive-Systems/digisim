@@ -2,7 +2,7 @@ use super::Component;
 use crate::sim::Event;
 
 #[derive(Debug, Clone, Default)]
-pub struct Tristate {
+pub struct Nand {
     a: bool,
     b: bool,
     output: bool,
@@ -10,14 +10,14 @@ pub struct Tristate {
     delay: u32,
 }
 
-impl Component for Tristate {
+impl Component for Nand {
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        // Component is disconnected (z-state)
-        if self.b == false || self.a == self.output {
+        let new = !(self.a & self.b);
+        if new == self.output {
             return None;
         }
 
-        Some(vec![(2, self.a)])
+        Some(vec![(2, new)])
     }
 
     fn update(&mut self, event: Event) {
