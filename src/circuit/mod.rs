@@ -2,10 +2,12 @@ mod id;
 mod connector;
 mod state;
 mod registry;
+mod template;
 pub use id::Id;
 pub use connector::Connector;
 pub use state::CircuitState;
 pub use registry::Registry;
+pub use template::Template;
 
 use std::collections::HashMap;
 use crate::Component;

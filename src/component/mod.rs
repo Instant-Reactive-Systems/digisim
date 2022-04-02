@@ -1,7 +1,13 @@
 mod tristate;
 mod nand;
+mod transparent;
+mod functional;
+mod compiled;
 pub use tristate::Tristate;
 pub use nand::Nand;
+pub use transparent::Transparent;
+pub use functional::Functional;
+pub use compiled::Compiled;
 
 use std::any::Any;
 use std::fmt::Debug;
