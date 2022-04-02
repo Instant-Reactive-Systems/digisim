@@ -36,7 +36,7 @@ mod tests {
             id: 1,
             name: "AndGate".into(),
             desc: "An AND gate component.".into(),
-            kind: ComponentKind::Composite,
+            kind: ComponentKind::Transparent,
             pins: Pins{
                 input: vec![
                     Connector { component: 0, pin: 0 },
