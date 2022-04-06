@@ -43,7 +43,7 @@ impl Circuit {
             let ctx = Context {
                 component,
                 component_def,
-                circuit_def: &circuit_def,
+                registry,
             };
 
             match component_def.kind {
@@ -79,18 +79,38 @@ impl Circuit {
     }
 
     fn process_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
-        todo!()
-    }
+        let mut transparent_components = Vec::new();
+        let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
+        let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
+        
+        for &component in circuit.components.iter() {
+            let component_def = ctx.registry.get_definition(component.def_id)?;
+            let ctx = Context {
+                component: ctx.component,
+                component_def,
+                registry: ctx.registry,
+            };
 
-    fn process_inner_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
-        todo!()
-    }
+            match component_def.kind {
+                ComponentKind::Builtin => self.process_builtin(ctx)?,
+                ComponentKind::Compiled => self.process_compiled(ctx)?,
+                ComponentKind::Functional => self.process_functional(ctx)?,
+                ComponentKind::Transparent => transparent_components.push(ctx),
+            }
+        }
+
+        for transparent in transparent_components {
+            self.process_transparent(transparent)?;
+        }
+
+        Ok(())
+    }    
 }
 
 pub struct Context<'a> {
     pub component: component::definition::Component,
     pub component_def: &'a ComponentDefinition,
-    pub circuit_def: &'a CircuitDefinition,
+    pub registry: &'a Registry,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -100,5 +120,16 @@ pub enum DefinitionError {
 
     #[error("Encountered a registry error.")]
     Registry(#[from] RegistryError),
+
+    #[error("Invalid transparent component found. Context: {0}")]
+    InvalidTransparentComponent(String),
 }
+
+
+#[cfg(test)]
+mod tests {
+    
+}
+
+
 

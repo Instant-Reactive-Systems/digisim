@@ -1,6 +1,5 @@
 use super::Component;
 use crate::sim::Event;
-use crate::Circuit;
 
 #[derive(Debug, Clone, Default)]
 pub struct Nand {

@@ -1,16 +1,12 @@
 pub mod definition;
 mod tristate;
 mod nand;
-mod transparent;
-mod functional;
-mod compiled;
+mod generic;
 mod wiring;
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
 pub use nand::Nand;
-pub use transparent::Transparent;
-pub use functional::Functional;
-pub use compiled::Compiled;
+pub use generic::Generic;
 pub use wiring::Wiring;
 
 use std::any::Any;
