@@ -1,4 +1,4 @@
-use super::Connector;
+use crate::circuit::Connector;
 
 #[derive(Debug, PartialEq, serde::Deserialize)]
 pub struct Pins {

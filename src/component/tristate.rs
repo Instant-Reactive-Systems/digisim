@@ -1,5 +1,6 @@
 use super::Component;
 use crate::sim::Event;
+use crate::Circuit;
 
 #[derive(Debug, Clone, Default)]
 pub struct Tristate {
@@ -27,10 +28,10 @@ impl Component for Tristate {
         }
     }
 
-    fn set_pin(&mut self, pin: u32, value: bool) {
+    fn set_pin(&mut self, pin: u32, event: Event) {
         match pin {
-            0 => self.a = value,
-            1 => self.b = value,
+            0 => self.a = event.value,
+            1 => self.b = event.value,
             _ => {}
         }
     }
@@ -41,6 +42,10 @@ impl Component for Tristate {
 
     fn delay(&self) -> u32 {
         self.delay
+    }
+
+    fn is_source(&self) -> bool {
+        false
     }
 }
 

@@ -1,13 +1,17 @@
+pub mod definition;
 mod tristate;
 mod nand;
 mod transparent;
 mod functional;
 mod compiled;
+mod wiring;
+pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
 pub use nand::Nand;
 pub use transparent::Transparent;
 pub use functional::Functional;
 pub use compiled::Compiled;
+pub use wiring::Wiring;
 
 use std::any::Any;
 use std::fmt::Debug;
@@ -23,12 +27,15 @@ pub trait Component: Any + Debug {
     fn update(&mut self, event: Event);
 
     /// Sets the specified pin to the specified value.
-    fn set_pin(&mut self, pin: u32, value: bool);
+    fn set_pin(&mut self, pin: u32, event: Event);
 
     /// Gets the current state of the component.
     fn get_state(&self) -> serde_json::Value;
 
     /// Gets the delay of the component.
     fn delay(&self) -> u32;
+
+    /// Checks if the component is a source component.
+    fn is_source(&self) -> bool;
 }
 

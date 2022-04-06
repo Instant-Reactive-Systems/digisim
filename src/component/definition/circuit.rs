@@ -1,4 +1,5 @@
-use super::{Component, Connection};
+use crate::circuit::Connection;
+use super::Component;
 
 #[derive(Debug, PartialEq, serde::Deserialize)]
 pub struct Circuit {

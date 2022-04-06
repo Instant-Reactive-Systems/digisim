@@ -5,3 +5,4 @@ pub struct Connection {
     pub from: Connector,
     pub to: Vec<Connector>,
 }
+

@@ -1,19 +1,17 @@
 mod kind;
+mod pins;
 mod circuit;
 mod component;
-mod connector;
-mod connection;
-mod pins;
 pub use kind::ComponentKind;
+pub use pins::Pins;
 pub use circuit::Circuit;
 pub use component::Component;
-pub use connector::Connector;
-pub use connection::Connection;
-pub use pins::Pins;
+
+use super::Component as ComponentTrait;
 
 #[derive(Debug, PartialEq, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Template {
+pub struct ComponentDefinition {
     pub id: i32,
     pub name: String,
     #[serde(rename = "description")] pub desc: String,
@@ -24,15 +22,35 @@ pub struct Template {
     #[serde(rename = "booleanFunction")] pub expr: Option<String>,
 }
 
+impl ComponentDefinition {
+    pub fn instantiate(&self) -> Box<dyn ComponentTrait> {
+        match self.kind {
+            ComponentKind::Builtin => {
+                unimplemented!()
+            },
+            ComponentKind::Transparent => {
+                unimplemented!()
+            },
+            ComponentKind::Compiled => {
+                unimplemented!()
+            },
+            ComponentKind::Functional => {
+                unimplemented!()
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::circuit::{Connection, Connector};
 
     #[test]
     fn and_gate() {
         let def = include_str!("../../../tests/assets/and_gate_definition.json");
-        let template: Template = serde_json::from_str(def).unwrap();
-        let result = Template {
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        let result = ComponentDefinition {
             id: 1,
             name: "AndGate".into(),
             desc: "An AND gate component.".into(),
@@ -48,8 +66,8 @@ mod tests {
             },
             circuit: Some(Circuit {
                 components: vec![
-                    Component { template_id: -1, id: 0 },
-                    Component { template_id: -1, id: 1 },
+                    Component { def_id: -1, id: 0 },
+                    Component { def_id: -1, id: 1 },
                 ],
                 connections: vec![
                     Connection { 
@@ -70,7 +88,7 @@ mod tests {
             expr: Some("A and B".into()),
         };
 
-        assert_eq!(template, result);
+        assert_eq!(parsed, result);
     }
 }
 

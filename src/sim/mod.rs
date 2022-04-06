@@ -47,7 +47,7 @@ impl Simulation {
             
             for to in self.circuit.connections[&event.src].iter() {
                 let component = self.circuit.components.get_mut(&to.component).unwrap();
-                component.set_pin(to.pin, event.value);
+                component.set_pin(to.pin, event);
                 activity_set.insert(to.component);
             }
         }

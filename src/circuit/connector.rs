@@ -1,8 +1,8 @@
 use super::Id;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize)]
 pub struct Connector {
-    pub component: Id,
+    #[serde(rename = "componentId")] pub component: Id,
     pub pin: Id,
 }
 
