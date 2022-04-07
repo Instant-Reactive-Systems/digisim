@@ -1,14 +1,18 @@
 mod kind;
 mod pins;
+mod pin_mapping;
 mod circuit;
 mod component;
 pub use kind::ComponentKind;
 pub use pins::Pins;
+pub use pin_mapping::PinMapping;
 pub use circuit::Circuit;
 pub use component::Component;
 
 use super::Component as ComponentTrait;
 use derivative::Derivative;
+use crate::circuit::registry::PREBUILT_REGISTRY;
+use crate::component::Generic;
 
 #[derive(Derivative, Debug, Clone, serde::Deserialize)]
 #[derivative(PartialEq)]
@@ -19,6 +23,7 @@ pub struct ComponentDefinition {
     #[serde(rename = "description")] pub desc: String,
     #[serde(rename = "type")] pub kind: ComponentKind,
     pub pins: Pins,
+    pub pin_mapping: Option<PinMapping>,
     pub circuit: Option<Circuit>,
     pub truth_table: Option<Vec<Vec<bool>>>,
     #[serde(rename = "booleanFunction")] pub expr: Option<String>,
@@ -32,16 +37,14 @@ impl ComponentDefinition {
     pub fn instantiate(&self) -> Box<dyn ComponentTrait> {
         match self.kind {
             ComponentKind::Builtin => {
-                unimplemented!()
+                PREBUILT_REGISTRY.with(|reg| {
+                    (reg.data[&self.id].factory)()
+                })
             },
-            ComponentKind::Transparent => {
-                unimplemented!()
-            },
-            ComponentKind::Compiled => {
-                unimplemented!()
-            },
-            ComponentKind::Functional => {
-                unimplemented!()
+            _ => {
+                Box::new(Generic {
+                    component_def: &self,
+                })
             },
         }
     }
@@ -84,6 +87,10 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
+                input: vec!["A", "B"],
+                output: vec!["Y"],
+            },
+            pin_mapping: Some(PinMapping{
                 input: vec![
                     Connector { component: 0, pin: 0 },
                     Connector { component: 0, pin: 1 },
@@ -91,7 +98,7 @@ mod tests {
                 output: vec![
                     Connector { component: 1, pin: 2 },
                 ],
-            },
+            }),
             circuit: Some(Circuit {
                 components: vec![
                     Component { def_id: -1, id: 0 },
@@ -128,6 +135,10 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
+                input: vec!["A", "B"],
+                output: vec!["Y"],
+            },
+            pin_mapping: Some(PinMapping{
                 input: vec![
                     Connector { component: 0, pin: 0 },
                     Connector { component: 0, pin: 1 },
@@ -135,7 +146,7 @@ mod tests {
                 output: vec![
                     Connector { component: 1, pin: 2 },
                 ],
-            },
+            }),
             circuit: Some(Circuit {
                 components: vec![
                     Component { def_id: -1, id: 0 },
@@ -164,6 +175,10 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
+                input: vec!["A", "B"],
+                output: vec!["Y"],
+            },
+            pin_mapping: Some(PinMapping{
                 input: vec![
                     Connector { component: 5, pin: 0 },
                     Connector { component: 5, pin: 1 },
@@ -171,7 +186,7 @@ mod tests {
                 output: vec![
                     Connector { component: 6, pin: 2 },
                 ],
-            },
+            }),
             circuit: Some(Circuit {
                 components: vec![
                     Component { def_id: -1, id: 5 },

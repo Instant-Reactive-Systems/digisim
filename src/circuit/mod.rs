@@ -2,7 +2,7 @@ mod id;
 mod connector;
 mod connection;
 mod state;
-mod registry;
+pub mod registry;
 mod definition;
 pub use id::Id;
 pub use connector::Connector;
@@ -83,6 +83,9 @@ impl Circuit {
         let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
         let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
         
+        // Insert current transparent component
+        self.components.insert(ctx.component.id, ctx.component_def.instantiate());
+
         for &component in circuit.components.iter() {
             let component_def = ctx.registry.get_definition(component.def_id)?;
             let ctx = Context {
@@ -99,9 +102,13 @@ impl Circuit {
             }
         }
 
+        // Insert and process inner transparent components
         for transparent in transparent_components {
+            self.components.insert(transparent.component.id, transparent.component_def.instantiate());
             self.process_transparent(transparent)?;
         }
+
+        
 
         Ok(())
     }    
@@ -128,7 +135,24 @@ pub enum DefinitionError {
 
 #[cfg(test)]
 mod tests {
-    
+    use crate::{component::ComponentDefinition, Circuit};
+    use super::{CircuitDefinition, Registry};
+
+    #[test]
+    fn nand_gate() {
+        let mut registry = Registry::default();
+
+        let def = include_str!("../../tests/assets/and_gate_definition.json");
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        registry.insert(parsed);
+        let def = include_str!("../../tests/assets/not_gate_definition.json");
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        registry.insert(parsed);
+
+        let def = include_str!("../../tests/assets/nand_gate_circuit.json");
+        let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
+        Circuit::from_definition(&registry, parsed);
+    }
 }
 
 

@@ -1,8 +1,8 @@
 pub mod definition;
-mod tristate;
-mod nand;
-mod generic;
-mod wiring;
+pub mod tristate;
+pub mod nand;
+pub mod generic;
+pub mod wiring;
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
 pub use nand::Nand;

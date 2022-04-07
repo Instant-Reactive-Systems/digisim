@@ -4,6 +4,10 @@
     "description": "An AND gate component.",
     "type": "Transparent",
     "pins": {
+        "input": ["A", "B"],
+        "output": ["Y"]
+    },
+    "pinMapping": {
         "input": [
             {
                 "componentId": 0,
