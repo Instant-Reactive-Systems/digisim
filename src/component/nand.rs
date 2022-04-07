@@ -1,4 +1,4 @@
-use super::{Component, ComponentDefinition, definition::{ComponentKind, Pins}};
+use super::Component;
 use crate::sim::Event;
 
 #[derive(Debug, Clone, Default)]
@@ -47,21 +47,4 @@ impl Component for Nand {
         false
     }
 }
-
-pub static COMPONENT_DEF: ComponentDefinition = ComponentDefinition {
-    id: -1,
-    name: "NAND Gate",
-    desc: "It's a NAND gate.",
-    kind: ComponentKind::Builtin,
-    pins: Pins {
-        input: vec!["A", "B"],
-        output: vec!["Y"],
-    },
-    pin_mapping: None,
-    circuit: None,
-    truth_table: None,
-    expr: None,
-    parsed_expr: None,
-};
-
 

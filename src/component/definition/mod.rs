@@ -43,7 +43,7 @@ impl ComponentDefinition {
             },
             _ => {
                 Box::new(Generic {
-                    component_def: &self,
+                    component_def: self,
                 })
             },
         }
@@ -65,8 +65,8 @@ impl ComponentDefinition {
         }
         
         // Update input/output mapping
-        new_component_def.pins.input.iter_mut().for_each(|x| x.component += first_free_id);
-        new_component_def.pins.output.iter_mut().for_each(|x| x.component += first_free_id);
+        new_component_def.pin_mapping.as_mut().unwrap().input.iter_mut().for_each(|x| x.component += first_free_id);
+        new_component_def.pin_mapping.as_mut().unwrap().output.iter_mut().for_each(|x| x.component += first_free_id);
 
         new_component_def
     }
@@ -87,8 +87,8 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
-                input: vec!["A", "B"],
-                output: vec!["Y"],
+                input: vec!["A".into(), "B".into()],
+                output: vec!["Y".into()],
             },
             pin_mapping: Some(PinMapping{
                 input: vec![
@@ -135,8 +135,8 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
-                input: vec!["A", "B"],
-                output: vec!["Y"],
+                input: vec!["A".into(), "B".into()],
+                output: vec!["Y".into()],
             },
             pin_mapping: Some(PinMapping{
                 input: vec![
@@ -175,8 +175,8 @@ mod tests {
             desc: "An AND gate component.".into(),
             kind: ComponentKind::Transparent,
             pins: Pins{
-                input: vec!["A", "B"],
-                output: vec!["Y"],
+                input: vec!["A".into(), "B".into()],
+                output: vec!["Y".into()],
             },
             pin_mapping: Some(PinMapping{
                 input: vec![

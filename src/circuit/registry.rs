@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::component::{self, ComponentDefinition, Component};
+use crate::component::{self, ComponentDefinition, Component, definition::{Pins, ComponentKind}, Nand};
 
 #[derive(Debug)]
 pub struct Registry {
@@ -40,7 +40,7 @@ impl Default for Registry {
         let mut components = HashMap::new();
         PREBUILT_REGISTRY.with(|reg| {
             for prebuilt in reg.data.values() {
-                components.insert(prebuilt.def.id, prebuilt.def);
+                components.insert(prebuilt.def.id, prebuilt.def.clone());
             }
         });
         
@@ -55,8 +55,22 @@ impl Default for PrebuiltRegistry {
         let mut data = HashMap::new();
 
         data.insert(-1, PrebuiltEntry {
-            def: component::nand::COMPONENT_DEF,
-            factory: Box::new(|| Box::new(component::nand::Nand::default())),
+            def: ComponentDefinition {
+                id: -1,
+                name: "NAND Gate".into(),
+                desc: "It's a NAND gate.".into(),
+                kind: ComponentKind::Builtin,
+                pins: Pins {
+                    input: vec!["A".into(), "B".into()],
+                    output: vec!["Y".into()],
+                },
+                pin_mapping: None,
+                circuit: None,
+                truth_table: None,
+                expr: None,
+                parsed_expr: None,
+            },
+            factory: Box::new(|| Box::new(Nand::default())),
         });
 
         Self {

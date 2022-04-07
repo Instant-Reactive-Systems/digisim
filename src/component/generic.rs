@@ -3,11 +3,6 @@ use crate::sim::Event;
 
 #[derive(Debug)]
 pub struct Generic {
-    inner: UnsafeGeneric,
-}
-
-#[derive(Debug)]
-pub struct UnsafeGeneric {
     pub component_def: *const ComponentDefinition,
 }
 
