@@ -58,7 +58,7 @@ impl Circuit {
             circuit.process_transparent(transparent)?;
         }
 
-        todo!()
+        Ok(circuit)
     }
 
     fn process_builtin(&mut self, ctx: Context) -> Result<(), DefinitionError> {
@@ -79,17 +79,19 @@ impl Circuit {
     }
 
     fn process_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
+        // Insert current transparent component
+        self.components.insert(ctx.component.id, ctx.component_def.instantiate());
+
         let mut transparent_components = Vec::new();
         let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
         let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
-        
-        // Insert current transparent component
-        self.components.insert(ctx.component.id, ctx.component_def.instantiate());
+
+        println!("Rerouted:\n{:?}", rerouted_def);
 
         for &component in circuit.components.iter() {
             let component_def = ctx.registry.get_definition(component.def_id)?;
             let ctx = Context {
-                component: ctx.component,
+                component,
                 component_def,
                 registry: ctx.registry,
             };
@@ -108,12 +110,11 @@ impl Circuit {
             self.process_transparent(transparent)?;
         }
 
-        
-
         Ok(())
     }    
 }
 
+#[derive(Debug)]
 pub struct Context<'a> {
     pub component: component::definition::Component,
     pub component_def: &'a ComponentDefinition,
@@ -151,7 +152,11 @@ mod tests {
 
         let def = include_str!("../../tests/assets/nand_gate_circuit.json");
         let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
-        Circuit::from_definition(&registry, parsed);
+        let circuit = Circuit::from_definition(&registry, parsed).unwrap();
+
+        for (id, component) in circuit.components.iter() {
+            println!("{}. Component: {:?}", id, component);
+        }
     }
 }
 

@@ -16,19 +16,6 @@ impl Registry {
     }
 }
 
-pub struct PrebuiltRegistry {
-    pub data: HashMap<i32, PrebuiltEntry>,
-}
-
-pub struct PrebuiltEntry {
-    pub def: ComponentDefinition,
-    pub factory: Box<dyn Fn() -> Box<dyn Component>>,
-}
-
-thread_local! {
-    pub static PREBUILT_REGISTRY: PrebuiltRegistry = PrebuiltRegistry::default();
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum RegistryError {
     #[error("Invalid definition id {0} received.")]
@@ -48,6 +35,19 @@ impl Default for Registry {
             components,
         }
     }
+}
+
+pub struct PrebuiltRegistry {
+    pub data: HashMap<i32, PrebuiltEntry>,
+}
+
+pub struct PrebuiltEntry {
+    pub def: ComponentDefinition,
+    pub factory: Box<dyn Fn() -> Box<dyn Component>>,
+}
+
+thread_local! {
+    pub static PREBUILT_REGISTRY: PrebuiltRegistry = PrebuiltRegistry::default();
 }
 
 impl Default for PrebuiltRegistry {

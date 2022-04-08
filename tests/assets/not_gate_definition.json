@@ -12,7 +12,7 @@
             {
                 "componentId": 0,
                 "pin": 0
-            },
+            }
         ],
         "output": [
             {
@@ -26,19 +26,19 @@
             {
                 "definitionId": -1,
                 "id": 0
-            },
+            }
         ],
         "connections": []
     },
     "truthTable": [
         [
             false,
-            true,
+            true
         ],
         [
             true,
-            false,
-        ],
+            false
+        ]
     ],
     "booleanFunction": "not A"
 }

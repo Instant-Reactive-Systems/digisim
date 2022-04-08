@@ -1,7 +1,7 @@
+use std::fmt::{Debug, Formatter};
 use super::{Component, ComponentDefinition};
 use crate::sim::Event;
 
-#[derive(Debug)]
 pub struct Generic {
     pub component_def: *const ComponentDefinition,
 }
@@ -29,6 +29,12 @@ impl Component for Generic {
 
     fn is_source(&self) -> bool {
         todo!()
+    }
+}
+
+impl Debug for Generic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        unsafe { write!(f, "Generic component with component definition id {}", (*self.component_def).id) }
     }
 }
 
