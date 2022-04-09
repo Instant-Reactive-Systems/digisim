@@ -1,0 +1,62 @@
+{
+    "id": 3,
+    "name": "AB Inverted",
+    "description": "A component which has its B input inverted.",
+    "type": "Transparent",
+    "pins": {
+        "input": ["A", "B"],
+        "output": ["Y"]
+    },
+    "params": [
+        {
+            "id": 0,
+            "data": {
+
+            }
+        }
+    ],
+    "pinMapping": {
+        "input": [
+            {
+                "componentId": 0,
+                "pin": 0
+            },
+            {
+                "componentId": 1,
+                "pin": 0
+            }
+        ],
+        "output": [
+            {
+                "componentId": 1,
+                "pin": 2
+            }
+        ]
+    }, 
+    "circuit": {
+        "components": [
+            {
+                "definitionId": 2,
+                "id": 0
+            },
+            {
+                "definitionId": 1,
+                "id": 1
+            }
+        ],
+        "connections": [
+            {
+                "from": {
+                    "componentId": 0,
+                    "pin": 1
+                },
+                "to": [
+                    {
+                        "componentId": 1,
+                        "pin": 1
+                    }
+                ]
+            }
+        ]
+    }
+}

@@ -65,8 +65,9 @@ impl ComponentDefinition {
         }
         
         // Update input/output mapping
-        new_component_def.pin_mapping.as_mut().unwrap().input.iter_mut().for_each(|x| x.component += first_free_id);
-        new_component_def.pin_mapping.as_mut().unwrap().output.iter_mut().for_each(|x| x.component += first_free_id);
+        let pin_mapping = new_component_def.pin_mapping.as_mut().unwrap();
+        pin_mapping.input.iter_mut().for_each(|x| x.component += first_free_id);
+        pin_mapping.output.iter_mut().for_each(|x| x.component += first_free_id);
 
         new_component_def
     }

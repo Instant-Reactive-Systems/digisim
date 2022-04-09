@@ -34,7 +34,8 @@ impl Component for Generic {
 
 impl Debug for Generic {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        unsafe { write!(f, "Generic component with component definition id {}", (*self.component_def).id) }
+        let component_def = unsafe { &*self.component_def };
+        write!(f, "Generic component '{}', id {}", component_def.name, component_def.id)
     }
 }
 

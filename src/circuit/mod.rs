@@ -14,8 +14,10 @@ pub use definition::CircuitDefinition;
 
 use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
-use crate::component::{self, Component, ComponentDefinition};
+use crate::component::{self, Component, ComponentDefinition, Generic};
 use registry::RegistryError;
+
+use std::any::Any;
 
 /// A self-contained collection of all components and its wiring.
 #[derive(Debug, Default)]
@@ -23,6 +25,8 @@ pub struct Circuit {
     pub components: HashMap<Id, Box<dyn Component>>,
     pub output_components: Vec<Id>,
     pub connections: HashMap<Connector, Vec<Connector>>,
+
+    rerouted_defs: HashMap<Id, ComponentDefinition>,
 }
 
 impl Circuit {
@@ -50,12 +54,28 @@ impl Circuit {
                 ComponentKind::Builtin => circuit.process_builtin(ctx)?,
                 ComponentKind::Compiled => circuit.process_compiled(ctx)?,
                 ComponentKind::Functional => circuit.process_functional(ctx)?,
-                ComponentKind::Transparent => transparent_components.push(ctx),
+                ComponentKind::Transparent => {
+                    // Insert transparent component ahead of time for IDs to work
+                    circuit.components.insert(ctx.component.id, ctx.component_def.instantiate());
+                    transparent_components.push(ctx)
+                },
             }
         }
 
         for transparent in transparent_components {
             circuit.process_transparent(transparent)?;
+        }
+
+        for connection in circuit_def.connections.iter() {
+            let rerouted_connection = circuit.reroute_connection(connection)?;
+            circuit.connections.insert(rerouted_connection.from, rerouted_connection.to);
+        }
+
+        for component_def in circuit.rerouted_defs.values() {
+            for connection in component_def.circuit.unwrap().connections.iter() {
+                let rerouted_connection = circuit.reroute_connection(connection)?;
+                circuit.connections.insert(rerouted_connection.from, rerouted_connection.to);
+            }
         }
 
         Ok(circuit)
@@ -79,14 +99,11 @@ impl Circuit {
     }
 
     fn process_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
-        // Insert current transparent component
-        self.components.insert(ctx.component.id, ctx.component_def.instantiate());
-
         let mut transparent_components = Vec::new();
-        let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
-        let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
 
-        println!("Rerouted:\n{:?}", rerouted_def);
+        self.rerouted_defs.insert(ctx.component.id, ctx.component_def.reroute_component_def(self.components.len() as u32));
+        let rerouted_def = self.rerouted_defs.get(&ctx.component.id).unwrap();
+        let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
 
         for &component in circuit.components.iter() {
             let component_def = ctx.registry.get_definition(component.def_id)?;
@@ -100,18 +117,62 @@ impl Circuit {
                 ComponentKind::Builtin => self.process_builtin(ctx)?,
                 ComponentKind::Compiled => self.process_compiled(ctx)?,
                 ComponentKind::Functional => self.process_functional(ctx)?,
-                ComponentKind::Transparent => transparent_components.push(ctx),
+                ComponentKind::Transparent => {
+                    // Insert transparent component ahead of time for IDs to work
+                    self.components.insert(ctx.component.id, ctx.component_def.instantiate());
+                    transparent_components.push(ctx)
+                },
             }
         }
 
         // Insert and process inner transparent components
         for transparent in transparent_components {
-            self.components.insert(transparent.component.id, transparent.component_def.instantiate());
+            // Insert transparent component ahead of time for IDs to work
+            self.components.insert(ctx.component.id, ctx.component_def.instantiate());
             self.process_transparent(transparent)?;
         }
 
         Ok(())
-    }    
+    }
+
+    /// Reroutes the connector to the first connected builtin component.
+    fn reroute_to_builtin(&mut self, connector: Connector) -> Result<Connector, DefinitionError> {
+        let component = self.components.get(&connector.component)
+            .ok_or(DefinitionError::InvalidConnector(connector))?;
+        if let Some(generic) = get_transparent(component) {
+            let rerouted_def = self.rerouted_defs.get(&connector.component).unwrap();
+            let pin_mapping = rerouted_def.pin_mapping.as_ref().unwrap();
+            let input = pin_mapping.input.iter();
+            let output = pin_mapping.output.iter();
+            let mut pins = input.chain(output);
+
+            // TODO: Do actual error handling
+            let connector = pins.nth(connector.pin as usize).unwrap();
+            return self.reroute_to_builtin(*connector);
+        }
+
+        Ok(connector)
+    }
+
+    fn reroute_connection(&mut self, connection: &Connection) -> Result<Connection, DefinitionError> {
+        let from = self.reroute_to_builtin(connection.from)?;
+        let to: Vec<Connector> = connection.to.iter().map(|x| {
+            self.reroute_to_builtin(*x)
+        }).collect::<Result<_, _>>()?;
+
+        Ok(Connection { from, to })
+    }
+}
+
+fn get_transparent(component: &Box<dyn Component>) -> Option<&Generic> {
+    let any = component as &dyn Any;
+    if let Some(generic) = any.downcast_ref::<Generic>() {
+        if unsafe { (*generic.component_def).kind == ComponentKind::Transparent } {
+            return Some(generic);
+        }
+    }
+
+    None
 }
 
 #[derive(Debug)]
@@ -131,6 +192,9 @@ pub enum DefinitionError {
 
     #[error("Invalid transparent component found. Context: {0}")]
     InvalidTransparentComponent(String),
+
+    #[error("Invalid connector (0.component, 0.pin) found in circuit connections.")]
+    InvalidConnector(Connector),
 }
 
 
@@ -139,6 +203,7 @@ mod tests {
     use crate::{component::ComponentDefinition, Circuit};
     use super::{CircuitDefinition, Registry};
 
+    // TODO: Check number of components inserted
     #[test]
     fn nand_gate() {
         let mut registry = Registry::default();
@@ -151,6 +216,29 @@ mod tests {
         registry.insert(parsed);
 
         let def = include_str!("../../tests/assets/nand_gate_circuit.json");
+        let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
+        let circuit = Circuit::from_definition(&registry, parsed).unwrap();
+
+        for (id, component) in circuit.components.iter() {
+            println!("{}. Component: {:?}", id, component);
+        }
+    }
+
+    #[test]
+    fn ab_inverted() {
+        let mut registry = Registry::default();
+
+        let def = include_str!("../../tests/assets/and_gate_definition.json");
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        registry.insert(parsed);
+        let def = include_str!("../../tests/assets/not_gate_definition.json");
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        registry.insert(parsed);
+        let def = include_str!("../../tests/assets/ab_inverted_definition.json");
+        let parsed: ComponentDefinition = serde_json::from_str(def).unwrap();
+        registry.insert(parsed);
+
+        let def = include_str!("../../tests/assets/ab_inverted_on_not_circuit.json");
         let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
         let circuit = Circuit::from_definition(&registry, parsed).unwrap();
 
