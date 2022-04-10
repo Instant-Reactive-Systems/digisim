@@ -66,8 +66,8 @@ impl ComponentDefinition {
         
         // Update input/output mapping
         let pin_mapping = new_component_def.pin_mapping.as_mut().unwrap();
-        pin_mapping.input.iter_mut().for_each(|x| x.component += first_free_id);
-        pin_mapping.output.iter_mut().for_each(|x| x.component += first_free_id);
+        pin_mapping.input.iter_mut().flatten().for_each(|x| x.component += first_free_id);
+        pin_mapping.output.iter_mut().flatten().for_each(|x| x.component += first_free_id);
 
         new_component_def
     }
@@ -93,11 +93,13 @@ mod tests {
             },
             pin_mapping: Some(PinMapping{
                 input: vec![
-                    Connector { component: 0, pin: 0 },
-                    Connector { component: 0, pin: 1 },
+                    vec![Connector { component: 0, pin: 0 }],
+                    vec![Connector { component: 0, pin: 1 }],
                 ],
                 output: vec![
-                    Connector { component: 1, pin: 2 },
+                    vec![
+                        Connector { component: 1, pin: 2 },
+                    ]
                 ],
             }),
             circuit: Some(Circuit {
@@ -141,11 +143,13 @@ mod tests {
             },
             pin_mapping: Some(PinMapping{
                 input: vec![
-                    Connector { component: 0, pin: 0 },
-                    Connector { component: 0, pin: 1 },
+                    vec![Connector { component: 0, pin: 0 }],
+                    vec![Connector { component: 0, pin: 1 }],
                 ],
                 output: vec![
-                    Connector { component: 1, pin: 2 },
+                    vec![
+                        Connector { component: 1, pin: 2 },
+                    ]
                 ],
             }),
             circuit: Some(Circuit {
@@ -181,11 +185,13 @@ mod tests {
             },
             pin_mapping: Some(PinMapping{
                 input: vec![
-                    Connector { component: 5, pin: 0 },
-                    Connector { component: 5, pin: 1 },
+                    vec![Connector { component: 5, pin: 0 }],
+                    vec![Connector { component: 5, pin: 1 }],
                 ],
                 output: vec![
-                    Connector { component: 6, pin: 2 },
+                    vec![
+                        Connector { component: 6, pin: 2 },
+                    ]
                 ],
             }),
             circuit: Some(Circuit {

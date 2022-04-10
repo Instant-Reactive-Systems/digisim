@@ -7,30 +7,28 @@
         "input": ["A", "B"],
         "output": ["Y"]
     },
-    "params": [
-        {
-            "id": 0,
-            "data": {
-
-            }
-        }
-    ],
     "pinMapping": {
         "input": [
-            {
-                "componentId": 0,
-                "pin": 0
-            },
-            {
-                "componentId": 1,
-                "pin": 0
-            }
+            [
+                {
+                    "componentId": 0,
+                    "pin": 0
+                }
+            ],
+            [
+                {
+                    "componentId": 1,
+                    "pin": 0
+                }
+            ]
         ],
         "output": [
-            {
-                "componentId": 1,
-                "pin": 2
-            }
+            [
+                {
+                    "componentId": 1,
+                    "pin": 2
+                }
+            ]
         ]
     }, 
     "circuit": {

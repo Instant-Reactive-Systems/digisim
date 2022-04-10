@@ -62,19 +62,28 @@ impl Circuit {
             }
         }
 
+        // Process transparent components finally
         for transparent in transparent_components {
             circuit.process_transparent(transparent)?;
         }
 
+        // Insert all top-level connections
         for connection in circuit_def.connections.iter() {
-            let rerouted_connection = circuit.reroute_connection(connection)?;
-            circuit.connections.insert(rerouted_connection.from, rerouted_connection.to);
+            let rerouted_connections = circuit.reroute_connection(connection)?;
+
+            rerouted_connections.into_iter().for_each(|conn| {
+                circuit.connections.insert(conn.from, conn.to);
+            });
         }
 
+        // Insert the internal connections of a transparent component
         for component_def in circuit.rerouted_defs.values() {
-            for connection in component_def.circuit.unwrap().connections.iter() {
-                let rerouted_connection = circuit.reroute_connection(connection)?;
-                circuit.connections.insert(rerouted_connection.from, rerouted_connection.to);
+            for connection in component_def.circuit.as_ref().unwrap().connections.iter() {
+                let rerouted_connections = circuit.reroute_connection(connection)?;
+
+                rerouted_connections.into_iter().for_each(|conn| {
+                    circuit.connections.insert(conn.from, conn.to);
+                });
             }
         }
 
@@ -101,11 +110,12 @@ impl Circuit {
     fn process_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
         let mut transparent_components = Vec::new();
 
-        self.rerouted_defs.insert(ctx.component.id, ctx.component_def.reroute_component_def(self.components.len() as u32));
-        let rerouted_def = self.rerouted_defs.get(&ctx.component.id).unwrap();
-        let circuit = rerouted_def.circuit.as_ref().ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
+        let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
+        let rerouted_circuit = rerouted_def.circuit.as_ref()
+            .ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
+        self.rerouted_defs.insert(ctx.component.id, rerouted_def.clone());
 
-        for &component in circuit.components.iter() {
+        for &component in rerouted_circuit.components.iter() {
             let component_def = ctx.registry.get_definition(component.def_id)?;
             let ctx = Context {
                 component,
@@ -136,10 +146,18 @@ impl Circuit {
     }
 
     /// Reroutes the connector to the first connected builtin component.
-    fn reroute_to_builtin(&mut self, connector: Connector) -> Result<Connector, DefinitionError> {
+    fn reroute_to_builtin(&self, connector: Connector) -> Result<Vec<Connector>, DefinitionError> {
+        let mut rerouted_connectors = Vec::new();
+        self.reroute_to_concrete_impl(connector, &mut rerouted_connectors)?;
+
+        Ok(rerouted_connectors)
+    }
+
+    /// Reroutes the connector to the first connected concrete component.
+    fn reroute_to_concrete_impl(&self, connector: Connector, rerouted_connectors: &mut Vec<Connector>) -> Result<(), DefinitionError> {
         let component = self.components.get(&connector.component)
             .ok_or(DefinitionError::InvalidConnector(connector))?;
-        if let Some(generic) = get_transparent(component) {
+        if let Some(_) = get_transparent(component) {
             let rerouted_def = self.rerouted_defs.get(&connector.component).unwrap();
             let pin_mapping = rerouted_def.pin_mapping.as_ref().unwrap();
             let input = pin_mapping.input.iter();
@@ -147,20 +165,32 @@ impl Circuit {
             let mut pins = input.chain(output);
 
             // TODO: Do actual error handling
-            let connector = pins.nth(connector.pin as usize).unwrap();
-            return self.reroute_to_builtin(*connector);
+            let connectors = pins.nth(connector.pin as usize).unwrap();
+            connectors.iter().for_each(|c| {
+                self.reroute_to_concrete_impl(*c, rerouted_connectors);
+            });
+
+            return Ok(());
         }
 
-        Ok(connector)
+        // Add concrete component
+        rerouted_connectors.push(connector);
+        Ok(())
     }
 
-    fn reroute_connection(&mut self, connection: &Connection) -> Result<Connection, DefinitionError> {
+    fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
         let from = self.reroute_to_builtin(connection.from)?;
         let to: Vec<Connector> = connection.to.iter().map(|x| {
             self.reroute_to_builtin(*x)
-        }).collect::<Result<_, _>>()?;
+        }).collect::<Result<Vec<Vec<Connector>>, _>>()?.into_iter().flatten().collect();
 
-        Ok(Connection { from, to })
+        // Each 'from' connector needs to be connected to all the 'to' connectors
+        let connections = from.iter().map(|&from| {
+            let to = to.clone();
+            Connection { from, to }
+        }).collect();
+
+        Ok(connections)
     }
 }
 
