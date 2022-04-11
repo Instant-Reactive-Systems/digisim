@@ -1,3 +1,4 @@
+use std::any::Any;
 use super::Component;
 use crate::circuit::Connector;
 use crate::sim::Event;
@@ -29,6 +30,10 @@ impl Component for Wiring {
 
     fn is_source(&self) -> bool {
         false
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

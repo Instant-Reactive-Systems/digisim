@@ -3,15 +3,18 @@ mod tristate;
 mod nand;
 mod generic;
 mod wiring;
+mod switch;
+
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
 pub use nand::Nand;
 pub use generic::Generic;
 pub use wiring::Wiring;
+pub use switch::Switch;
 
 use std::any::Any;
 use std::fmt::Debug;
-use crate::sim::Event;
+use crate::sim::{Event, UserEvent, UserEventError};
 
 /// Trait that all components implement.
 pub trait Component: Any + Debug {
@@ -33,5 +36,12 @@ pub trait Component: Any + Debug {
 
     /// Checks if the component is a source component.
     fn is_source(&self) -> bool;
+
+    /// Cast to Any
+    fn as_any(&self) -> &dyn Any;
+
+    fn process_user_event(&self, user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {
+        unimplemented!()
+    }
 }
 

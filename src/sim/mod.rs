@@ -1,7 +1,10 @@
 mod event;
 mod wheel;
 mod config;
+mod user_event;
+
 pub use event::Event;
+pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
 pub use config::Config;
 
@@ -90,8 +93,16 @@ impl Simulation {
         unimplemented!()
     }
 
-    pub fn insert_input_event(&mut self, event: serde_json::Value) {
-        unimplemented!()
+    pub fn insert_input_event(&mut self, event: serde_json::Value) -> Result<(), UserEventError> {
+        let user_event: UserEvent = serde_json::from_value(event).unwrap();
+        let component = self.circuit.components.get(&user_event.component_id).unwrap();
+
+        let events = component.process_user_event(user_event)?;
+        for event in events {
+            self.wheel.schedule(component.delay(), event);
+        }
+
+        Ok(())
     }
 }
 

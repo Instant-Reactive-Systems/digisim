@@ -13,6 +13,10 @@
                 {
                     "componentId": 0,
                     "pin": 0
+                },
+                {
+                    "componentId": 0,
+                    "pin": 1
                 }
             ]
         ],
@@ -20,7 +24,7 @@
             [
                 {
                     "componentId": 0,
-                    "pin": 1
+                    "pin": 2
                 }
             ]
         ]

@@ -1,3 +1,4 @@
+use std::any::Any;
 use super::Component;
 use crate::sim::Event;
 use crate::Circuit;
@@ -46,6 +47,10 @@ impl Component for Tristate {
 
     fn is_source(&self) -> bool {
         false
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

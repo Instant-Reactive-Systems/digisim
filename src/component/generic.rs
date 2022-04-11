@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::fmt::{Debug, Formatter};
 use super::{Component, ComponentDefinition};
 use crate::sim::Event;
@@ -29,6 +30,10 @@ impl Component for Generic {
 
     fn is_source(&self) -> bool {
         todo!()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

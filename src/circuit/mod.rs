@@ -146,7 +146,7 @@ impl Circuit {
     }
 
     /// Reroutes the connector to the first connected builtin component.
-    fn reroute_to_builtin(&self, connector: Connector) -> Result<Vec<Connector>, DefinitionError> {
+    fn reroute_to_concrete(&self, connector: Connector) -> Result<Vec<Connector>, DefinitionError> {
         let mut rerouted_connectors = Vec::new();
         self.reroute_to_concrete_impl(connector, &mut rerouted_connectors)?;
 
@@ -179,9 +179,9 @@ impl Circuit {
     }
 
     fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
-        let from = self.reroute_to_builtin(connection.from)?;
+        let from = self.reroute_to_concrete(connection.from)?;
         let to: Vec<Connector> = connection.to.iter().map(|x| {
-            self.reroute_to_builtin(*x)
+            self.reroute_to_concrete(*x)
         }).collect::<Result<Vec<Vec<Connector>>, _>>()?.into_iter().flatten().collect();
 
         // Each 'from' connector needs to be connected to all the 'to' connectors
@@ -189,14 +189,15 @@ impl Circuit {
             let to = to.clone();
             Connection { from, to }
         }).collect();
+        println!("Rerouted connections:");
+        println!("{:?}", connections);
 
         Ok(connections)
     }
 }
 
 fn get_transparent(component: &Box<dyn Component>) -> Option<&Generic> {
-    let any = component as &dyn Any;
-    if let Some(generic) = any.downcast_ref::<Generic>() {
+    if let Some(generic) = component.as_any().downcast_ref::<Generic>() {
         if unsafe { (*generic.component_def).kind == ComponentKind::Transparent } {
             return Some(generic);
         }
@@ -231,6 +232,7 @@ pub enum DefinitionError {
 #[cfg(test)]
 mod tests {
     use crate::{component::ComponentDefinition, Circuit};
+    use crate::circuit::{Connection, get_transparent};
     use super::{CircuitDefinition, Registry};
 
     // TODO: Check number of components inserted
@@ -249,9 +251,11 @@ mod tests {
         let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
         let circuit = Circuit::from_definition(&registry, parsed).unwrap();
 
+        /*
         for (id, component) in circuit.components.iter() {
             println!("{}. Component: {:?}", id, component);
         }
+        */
     }
 
     #[test]
@@ -272,8 +276,21 @@ mod tests {
         let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
         let circuit = Circuit::from_definition(&registry, parsed).unwrap();
 
+        println!("AB inverted");
         for (id, component) in circuit.components.iter() {
-            println!("{}. Component: {:?}", id, component);
+            let rerouted_def = circuit.rerouted_defs.get(id);
+            if let Some(def) = rerouted_def {
+                println!("{}. Component: {:?}", id, component);
+                println!("{:?}", def.pin_mapping);
+                println!("{:?}", def.circuit.as_ref().unwrap().connections);
+            } else {
+                println!("{}. Component: {:?}", id, component);
+            }
+
+        }
+
+        for (from, to) in circuit.connections.iter() {
+            println!("Connection: (from: {:?}, to: {:?})", from, to);
         }
     }
 }

@@ -1,3 +1,4 @@
+use std::any::Any;
 use super::Component;
 use crate::sim::Event;
 
@@ -45,6 +46,10 @@ impl Component for Nand {
 
     fn is_source(&self) -> bool {
         false
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
