@@ -14,7 +14,7 @@ pub use definition::CircuitDefinition;
 
 use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
-use crate::component::{self, Component, ComponentDefinition, Generic};
+use crate::component::{self, Component, ComponentDefinition, Generic, Wiring};
 use registry::RegistryError;
 
 /// A self-contained collection of all components and its wiring.
@@ -25,6 +25,11 @@ pub struct Circuit {
     pub connections: HashMap<Connector, Vec<Connector>>,
 
     rerouted_defs: HashMap<Id, ComponentDefinition>,
+
+    /// Maps components IDs to their corresponding component definition ID
+    ///
+    /// Note: Used only during definition building.
+    definition_mapping: HashMap<Id, i32>,
 }
 
 impl Circuit {
@@ -82,6 +87,31 @@ impl Circuit {
             }
         }
 
+        // Insert wiring component and connect it to all the output pins
+        let mut wiring = Wiring::default();
+        for (component_id, def_id) in circuit.definition_mapping.iter() {
+            let def = registry.get_definition(*def_id).unwrap();
+
+            if def.kind == ComponentKind::Transparent {
+                continue;
+            }
+
+            let a = def.pins.input.len();
+            let b = a + def.pins.output.len();
+            for pin in a..b {
+                let from = Connector { component: *component_id, pin: pin as u32 };
+                let to = Connector { component: Id::MAX, pin: 0 }; // Pin ID does not matter in Wiring component
+                wiring.outputs.insert(from, false);
+
+                let entry = circuit.connections.entry(from).or_insert(Vec::new());
+                entry.push(to);
+            }
+        }
+        circuit.components.insert(Id::MAX, Box::new(wiring));
+
+        // Discard definition mapping
+        circuit.definition_mapping.clear();
+
         Ok(circuit)
     }
 
@@ -93,6 +123,7 @@ impl Circuit {
             self.output_components.push(ctx.component.id);
         }
         self.components.insert(ctx.component.id, component);
+        self.definition_mapping.insert(ctx.component.id, ctx.component_def.id);
 
         Ok(())
     }
@@ -113,6 +144,9 @@ impl Circuit {
         let rerouted_circuit = rerouted_def.circuit.as_ref()
             .ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
         self.rerouted_defs.insert(ctx.component.id, rerouted_def.clone());
+
+        // Store the definition mapping to the ID
+        self.definition_mapping.insert(ctx.component.id, ctx.component_def.id);
 
         // Process concrete components and defer transparent ones
         for &component in rerouted_circuit.components.iter() {
