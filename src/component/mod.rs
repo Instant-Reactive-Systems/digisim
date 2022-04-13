@@ -4,6 +4,10 @@ mod nand;
 mod generic;
 mod wiring;
 mod switch;
+mod ground;
+mod source;
+mod clock;
+mod led;
 
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
@@ -11,6 +15,10 @@ pub use nand::Nand;
 pub use generic::Generic;
 pub use wiring::Wiring;
 pub use switch::Switch;
+pub use ground::Ground;
+pub use source::Source;
+pub use clock::Clock;
+pub use led::Led;
 
 use std::any::Any;
 use std::fmt::Debug;
@@ -37,10 +45,13 @@ pub trait Component: Any + Debug {
     /// Checks if the component is a source component.
     fn is_source(&self) -> bool;
 
+    /// Checks if the component is an output component.
+    fn is_output(&self) -> bool;
+
     /// Cast to Any
     fn as_any(&self) -> &dyn Any;
 
-    fn process_user_event(&self, user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {
+    fn process_user_event(&self, _user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {
         unimplemented!()
     }
 }

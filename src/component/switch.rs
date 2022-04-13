@@ -25,7 +25,7 @@ impl Component for Switch {
 	}
 
 	fn get_state(&self) -> serde_json::Value {
-		todo!()
+        unimplemented!("Switch does not implement get_state since it is not an output component.");
 	}
 
 	fn delay(&self) -> u32 {
@@ -33,8 +33,12 @@ impl Component for Switch {
 	}
 
 	fn is_source(&self) -> bool {
-		false
+		true
 	}
+    
+    fn is_output(&self) -> bool {
+        false
+    }
 
 	fn as_any(&self) -> &dyn Any {
 		self

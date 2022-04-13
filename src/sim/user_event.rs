@@ -11,3 +11,4 @@ pub struct UserEvent {
 	pub component_id: Id,
 	pub payload: String,
 }
+

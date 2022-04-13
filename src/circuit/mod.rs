@@ -17,8 +17,6 @@ use crate::component::definition::ComponentKind;
 use crate::component::{self, Component, ComponentDefinition, Generic};
 use registry::RegistryError;
 
-use std::any::Any;
-
 /// A self-contained collection of all components and its wiring.
 #[derive(Debug, Default)]
 pub struct Circuit {
@@ -31,15 +29,12 @@ pub struct Circuit {
 
 impl Circuit {
     pub fn from_definition(registry: &Registry, circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
-        let mut circuit = Circuit::default();
-
         // 1.) Iterate through the components in the circuit
         // 2.) Process only non-transparent components, and put transparent ones into a separate
         // list
         // 3.) Then iterate through transparent components and recursively process inner transparent 
         // components by remapping their connections down to their concrete components
-        // Note: Do not add inner transparent components to the components field of the Circuit
-        
+        let mut circuit = Circuit::default();
         let mut transparent_components = Vec::new();
 
         for &component in circuit_def.components.iter() {
@@ -69,7 +64,7 @@ impl Circuit {
 
         // Insert all top-level connections
         for connection in circuit_def.connections.iter() {
-            let rerouted_connections = circuit.reroute_connection(connection)?;
+            let rerouted_connections = circuit.reroute_connection(connection, registry)?;
 
             rerouted_connections.into_iter().for_each(|conn| {
                 circuit.connections.insert(conn.from, conn.to);
@@ -79,7 +74,7 @@ impl Circuit {
         // Insert the internal connections of a transparent component
         for component_def in circuit.rerouted_defs.values() {
             for connection in component_def.circuit.as_ref().unwrap().connections.iter() {
-                let rerouted_connections = circuit.reroute_connection(connection)?;
+                let rerouted_connections = circuit.reroute_connection(connection, registry)?;
 
                 rerouted_connections.into_iter().for_each(|conn| {
                     circuit.connections.insert(conn.from, conn.to);
@@ -93,8 +88,11 @@ impl Circuit {
     fn process_builtin(&mut self, ctx: Context) -> Result<(), DefinitionError> {
         rassert!(!self.components.contains_key(&ctx.component.id), DefinitionError::ComponentIdAlreadyTaken(ctx.component.id));
 
-        self.components.insert(ctx.component.id, ctx.component_def.instantiate());
-        self.output_components.push(ctx.component.id);
+        let component = ctx.component_def.instantiate();
+        if component.is_output() {
+            self.output_components.push(ctx.component.id);
+        }
+        self.components.insert(ctx.component.id, component);
 
         Ok(())
     }
@@ -110,11 +108,13 @@ impl Circuit {
     fn process_transparent(&mut self, ctx: Context) -> Result<(), DefinitionError> {
         let mut transparent_components = Vec::new();
 
+        // Reroute the component definition
         let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
         let rerouted_circuit = rerouted_def.circuit.as_ref()
             .ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
         self.rerouted_defs.insert(ctx.component.id, rerouted_def.clone());
 
+        // Process concrete components and defer transparent ones
         for &component in rerouted_circuit.components.iter() {
             let component_def = ctx.registry.get_definition(component.def_id)?;
             let ctx = Context {
@@ -137,8 +137,6 @@ impl Circuit {
 
         // Insert and process inner transparent components
         for transparent in transparent_components {
-            // Insert transparent component ahead of time for IDs to work
-            self.components.insert(ctx.component.id, ctx.component_def.instantiate());
             self.process_transparent(transparent)?;
         }
 
@@ -166,9 +164,9 @@ impl Circuit {
 
             // TODO: Do actual error handling
             let connectors = pins.nth(connector.pin as usize).unwrap();
-            connectors.iter().for_each(|c| {
-                self.reroute_to_concrete_impl(*c, rerouted_connectors);
-            });
+            for connector in connectors {
+                self.reroute_to_concrete_impl(*connector, rerouted_connectors)?;
+            }
 
             return Ok(());
         }
@@ -178,20 +176,31 @@ impl Circuit {
         Ok(())
     }
 
-    fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
+    fn reroute_connection(&self, connection: &Connection, registry: &Registry) -> Result<Vec<Connection>, DefinitionError> {
         let from = self.reroute_to_concrete(connection.from)?;
         let to: Vec<Connector> = connection.to.iter().map(|x| {
             self.reroute_to_concrete(*x)
         }).collect::<Result<Vec<Vec<Connector>>, _>>()?.into_iter().flatten().collect();
 
         // Each 'from' connector needs to be connected to all the 'to' connectors
-        let connections = from.iter().map(|&from| {
+        let mut connections: Vec<Connection> = from.iter().map(|&from| {
             let to = to.clone();
             Connection { from, to }
         }).collect();
-        println!("Rerouted connections:");
-        println!("{:?}", connections);
 
+        // Wire Clock components back into itself so that events repeat
+        connections.iter_mut()
+            .filter(|x| {
+                let def_id = self.definition_mapping[&x.from.component];
+                let def = registry.get_definition(def_id).unwrap();
+
+                def.id == component::definition::CLOCK_ID
+            })
+            .for_each(|x| {
+                let to_self = Connector { component: x.from.component, pin: 1 };
+                x.to.push(to_self);
+            });
+        
         Ok(connections)
     }
 }
@@ -232,7 +241,6 @@ pub enum DefinitionError {
 #[cfg(test)]
 mod tests {
     use crate::{component::ComponentDefinition, Circuit};
-    use crate::circuit::{Connection, get_transparent};
     use super::{CircuitDefinition, Registry};
 
     // TODO: Check number of components inserted
@@ -251,11 +259,9 @@ mod tests {
         let parsed: CircuitDefinition = serde_json::from_str(def).unwrap();
         let circuit = Circuit::from_definition(&registry, parsed).unwrap();
 
-        /*
         for (id, component) in circuit.components.iter() {
             println!("{}. Component: {:?}", id, component);
         }
-        */
     }
 
     #[test]

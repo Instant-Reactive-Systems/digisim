@@ -38,7 +38,7 @@ impl Component for Tristate {
     }
 
     fn get_state(&self) -> serde_json::Value {
-        todo!()
+        unreachable!("Tristate does not implement get_state as it is not an output component.");
     }
 
     fn delay(&self) -> u32 {
@@ -46,6 +46,10 @@ impl Component for Tristate {
     }
 
     fn is_source(&self) -> bool {
+        false
+    }
+
+    fn is_output(&self) -> bool {
         false
     }
 

@@ -1,6 +1,6 @@
 use super::Id;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize, serde::Serialize)]
 pub struct Connector {
     #[serde(rename = "componentId")] pub component: Id,
     pub pin: Id,

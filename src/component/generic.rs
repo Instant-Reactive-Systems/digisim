@@ -32,6 +32,10 @@ impl Component for Generic {
         todo!()
     }
 
+    fn is_output(&self) -> bool {
+        false
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }

@@ -33,6 +33,14 @@ pub struct ComponentDefinition {
     pub parsed_expr: Option<rustlogic::LogicNode>,
 }
 
+// Prebuilt IDs
+pub const NAND_ID: i32 = -1;
+pub const TRISTATE_ID: i32 = -2;
+pub const CLOCK_ID: i32 = -3;
+pub const GROUND_ID: i32 = -4;
+pub const SOURCE_ID: i32 = -5;
+pub const SWITCH_ID: i32 = -6;
+
 impl ComponentDefinition {
     pub fn instantiate(&self) -> Box<dyn ComponentTrait> {
         match self.kind {

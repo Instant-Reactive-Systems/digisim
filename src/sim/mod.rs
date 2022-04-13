@@ -71,6 +71,22 @@ impl Simulation {
         }
     }
 
+    /// Initializes the simulation by inserting events from source components.
+    pub fn init(&mut self) {
+        for (&component_id, component) in self.circuit.components.iter() {
+            if component.is_source() {
+                if let Some(output) = component.evaluate() {
+                    for (pin_id, value) in output {
+                        let src = Connector::new(component_id, pin_id);
+                        let event = Event::new(value, src);
+
+                        self.wheel.schedule(0, event);
+                    }
+                }
+            }
+        }
+    }
+
     /// Returns a JSON object containing the circuit state.
     pub fn circuit_state(&self) -> CircuitState {
         let mut state = CircuitState::default();
