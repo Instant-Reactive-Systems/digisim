@@ -3,7 +3,7 @@ use std::any::Any;
 use crate::Component;
 use crate::sim::Event;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Clock {
     output: bool,
 

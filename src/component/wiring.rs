@@ -2,11 +2,11 @@ use std::any::Any;
 use super::Component;
 use crate::circuit::Connector;
 use crate::sim::Event;
-use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct Wiring {
-    pub outputs: HashMap<Connector, bool>,
+    pub outputs: Vec<Connector>,
+    pub values: Vec<bool>,
 }
 
 impl Component for Wiring {
@@ -16,14 +16,14 @@ impl Component for Wiring {
 
     fn update(&mut self, _event: Event) {}
 
-    fn set_pin(&mut self, _pin: u32, event: Event) {
-        self.outputs.insert(event.src, event.value);
+    fn set_pin(&mut self, pin: u32, event: Event) {
+        self.values[pin as usize] = event.value;
     }
 
     fn get_state(&self) -> serde_json::Value {
         let mut outputs = Vec::new();
 
-        for (at, value) in self.outputs.iter() {
+        for (at, value) in self.outputs.iter().zip(self.values.iter()) {
             let output = serde_json::json!({
                 "connector": at,
                 "value": value,
@@ -35,6 +35,7 @@ impl Component for Wiring {
     }
 
     fn delay(&self) -> u32 {
+        // Wiring is an output component, and as such, does not propagate signals
         unreachable!()
     }
 
@@ -51,6 +52,13 @@ impl Component for Wiring {
     }
 }
 
+impl Wiring {
+    pub fn add_output(&mut self, connector: Connector) {
+        self.outputs.push(connector);
+        self.values.push(false);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -58,17 +66,9 @@ mod tests {
     #[test]
     fn get_state_ok() {
         let mut wiring = Wiring::default();
-        wiring.outputs.insert(Connector::new(0, 0), true);
-        wiring.outputs.insert(Connector::new(0, 1), false);
+        wiring.add_output(Connector::new(0, 0));
+        wiring.add_output(Connector::new(0, 1));
         let state = wiring.get_state();
-
-        // Sort to make test testable
-        let mut vec = state.as_array().unwrap().clone();
-        vec.sort_by(|a, b| {
-            a["connector"]["componentId"].as_u64().unwrap()
-                .cmp(&b["connector"]["componentId"].as_u64().unwrap())
-        });
-        let state = serde_json::to_value(vec).unwrap();
 
         let expected = serde_json::json!([
             {
@@ -76,7 +76,7 @@ mod tests {
                     "componentId": 0u32,
                     "pin": 0u32,
                 },
-                "value": true,
+                "value": false,
             },
             {
                 "connector": {

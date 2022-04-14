@@ -15,7 +15,9 @@ pub use definition::CircuitDefinition;
 use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
 use crate::component::{self, Component, ComponentDefinition, Generic, Wiring};
-use registry::RegistryError;
+use DefinitionError::*;
+
+use self::registry::PREBUILT_REGISTRY;
 
 /// A self-contained collection of all components and its wiring.
 #[derive(Debug, Default)]
@@ -33,7 +35,7 @@ pub struct Circuit {
 }
 
 impl Circuit {
-    pub fn from_definition(registry: &Registry, circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
+    pub fn from_definition(registry: &Registry, mut circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
         // 1.) Iterate through the components in the circuit
         // 2.) Process only non-transparent components, and put transparent ones into a separate
         // list
@@ -67,9 +69,27 @@ impl Circuit {
             circuit.process_transparent(transparent)?;
         }
 
+        // Insert wiring component and add it to circuit definition's connections for top-level
+        // components
+        let mut wiring = Wiring::default();
+        for (count, component) in circuit_def.components.iter().enumerate() {
+            let def = registry.get_definition(component.def_id).unwrap();
+
+            let a = def.pins.input.len();
+            let b = a + def.pins.output.len();
+            for pin in a..b {
+                let from = Connector { component: component.id, pin: pin as u32 };
+                let to = vec![Connector { component: Id::MAX, pin: count as u32 }];
+                wiring.add_output(from);
+
+                circuit_def.connections.push(Connection { from, to });
+            }
+        }
+        circuit.components.insert(Id::MAX, Box::new(wiring));
+
         // Insert all top-level connections
         for connection in circuit_def.connections.iter() {
-            let rerouted_connections = circuit.reroute_connection(connection, registry)?;
+            let rerouted_connections = circuit.reroute_connection(connection)?;
 
             rerouted_connections.into_iter().for_each(|conn| {
                 circuit.connections.insert(conn.from, conn.to);
@@ -79,35 +99,13 @@ impl Circuit {
         // Insert the internal connections of a transparent component
         for component_def in circuit.rerouted_defs.values() {
             for connection in component_def.circuit.as_ref().unwrap().connections.iter() {
-                let rerouted_connections = circuit.reroute_connection(connection, registry)?;
+                let rerouted_connections = circuit.reroute_connection(connection)?;
 
                 rerouted_connections.into_iter().for_each(|conn| {
                     circuit.connections.insert(conn.from, conn.to);
                 });
             }
         }
-
-        // Insert wiring component and connect it to all the output pins
-        let mut wiring = Wiring::default();
-        for (component_id, def_id) in circuit.definition_mapping.iter() {
-            let def = registry.get_definition(*def_id).unwrap();
-
-            if def.kind == ComponentKind::Transparent {
-                continue;
-            }
-
-            let a = def.pins.input.len();
-            let b = a + def.pins.output.len();
-            for pin in a..b {
-                let from = Connector { component: *component_id, pin: pin as u32 };
-                let to = Connector { component: Id::MAX, pin: 0 }; // Pin ID does not matter in Wiring component
-                wiring.outputs.insert(from, false);
-
-                let entry = circuit.connections.entry(from).or_insert(Vec::new());
-                entry.push(to);
-            }
-        }
-        circuit.components.insert(Id::MAX, Box::new(wiring));
 
         // Discard definition mapping
         circuit.definition_mapping.clear();
@@ -116,7 +114,7 @@ impl Circuit {
     }
 
     fn process_builtin(&mut self, ctx: Context) -> Result<(), DefinitionError> {
-        rassert!(!self.components.contains_key(&ctx.component.id), DefinitionError::ComponentIdAlreadyTaken(ctx.component.id));
+        rassert!(!self.components.contains_key(&ctx.component.id), ComponentIdAlreadyTaken(ctx.component.id));
 
         let component = ctx.component_def.instantiate();
         if component.is_output() {
@@ -141,8 +139,7 @@ impl Circuit {
 
         // Reroute the component definition
         let rerouted_def = ctx.component_def.reroute_component_def(self.components.len() as u32);
-        let rerouted_circuit = rerouted_def.circuit.as_ref()
-            .ok_or(DefinitionError::InvalidTransparentComponent("No circuit field".into()))?;
+        let rerouted_circuit = rerouted_def.circuit.as_ref().ok_or(InvalidTransparentComponent("No circuit field".into()))?;
         self.rerouted_defs.insert(ctx.component.id, rerouted_def.clone());
 
         // Store the definition mapping to the ID
@@ -187,8 +184,8 @@ impl Circuit {
 
     /// Reroutes the connector to the first connected concrete component.
     fn reroute_to_concrete_impl(&self, connector: Connector, rerouted_connectors: &mut Vec<Connector>) -> Result<(), DefinitionError> {
-        let component = self.components.get(&connector.component)
-            .ok_or(DefinitionError::InvalidConnector(connector))?;
+        let component = self.components.get(&connector.component).ok_or(InvalidConnector(connector))?;
+
         if let Some(_) = get_transparent(component) {
             let rerouted_def = self.rerouted_defs.get(&connector.component).unwrap();
             let pin_mapping = rerouted_def.pin_mapping.as_ref().unwrap();
@@ -210,7 +207,7 @@ impl Circuit {
         Ok(())
     }
 
-    fn reroute_connection(&self, connection: &Connection, registry: &Registry) -> Result<Vec<Connection>, DefinitionError> {
+    fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
         let from = self.reroute_to_concrete(connection.from)?;
         let to: Vec<Connector> = connection.to.iter().map(|x| {
             self.reroute_to_concrete(*x)
@@ -226,9 +223,17 @@ impl Circuit {
         connections.iter_mut()
             .filter(|x| {
                 let def_id = self.definition_mapping[&x.from.component];
-                let def = registry.get_definition(def_id).unwrap();
+                
+                // If component is prebuilt and definition ID is the CLOCK_ID
+                PREBUILT_REGISTRY.with(|reg| {
+                    let entry = reg.data.get(&def_id);
 
-                def.id == component::definition::CLOCK_ID
+                    if let Some(entry) = entry {
+                        entry.def.id == registry::CLOCK_ID
+                    } else {
+                        false
+                    }
+                })
             })
             .for_each(|x| {
                 let to_self = Connector { component: x.from.component, pin: 1 };
@@ -262,7 +267,7 @@ pub enum DefinitionError {
     ComponentIdAlreadyTaken(u32),
 
     #[error("Encountered a registry error.")]
-    Registry(#[from] RegistryError),
+    RegistryError(#[from] registry::RegistryError),
 
     #[error("Invalid transparent component found. Context: {0}")]
     InvalidTransparentComponent(String),

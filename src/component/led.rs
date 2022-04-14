@@ -20,7 +20,7 @@ impl Component for Led {
 
     fn get_state(&self) -> serde_json::Value {
         serde_json::json!({
-            "connector": 0u32,
+            "pin": 0u32,
             "value": self.value,
         })
     }
