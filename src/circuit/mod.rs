@@ -16,11 +16,9 @@ use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
 use crate::component::{self, Component, ComponentDefinition, Generic, Wiring};
 use DefinitionError::*;
-use crate::wasm;
 use self::registry::PREBUILT_REGISTRY;
 
 /// A self-contained collection of all components and its wiring.
-#[wasm::wasm_bindgen]
 #[derive(Debug, Default)]
 pub struct Circuit {
     pub(crate) components: HashMap<Id, Box<dyn Component>>,
@@ -36,7 +34,7 @@ pub struct Circuit {
 }
 
 impl Circuit {
-    pub(crate) fn from_definition(registry: &Registry, mut circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
+    pub fn from_definition(registry: &Registry, mut circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
         // 1.) Iterate through the components in the circuit
         // 2.) Process only non-transparent components, and put transparent ones into a separate
         // list

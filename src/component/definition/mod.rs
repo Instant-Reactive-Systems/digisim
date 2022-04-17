@@ -13,33 +13,31 @@ use super::Component as ComponentTrait;
 use derivative::Derivative;
 use crate::circuit::registry::PREBUILT_REGISTRY;
 use crate::component::Generic;
-use crate::wasm;
 
-#[wasm::wasm_bindgen]
 #[derive(Derivative, Debug, Clone, serde::Deserialize)]
 #[derivative(PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ComponentDefinition {
-    pub(crate) id: i32,
-    pub(crate) name: String,
+    pub id: i32,
+    pub name: String,
     #[serde(rename = "description")] 
-    pub(crate) desc: String,
+    pub desc: String,
     #[serde(rename = "type")] 
-    pub(crate) kind: ComponentKind,
-    pub(crate) pins: Pins,
-    pub(crate) pin_mapping: Option<PinMapping>,
-    pub(crate) circuit: Option<Circuit>,
-    pub(crate) truth_table: Option<Vec<Vec<bool>>>,
+    pub kind: ComponentKind,
+    pub pins: Pins,
+    pub pin_mapping: Option<PinMapping>,
+    pub circuit: Option<Circuit>,
+    pub truth_table: Option<Vec<Vec<bool>>>,
     #[serde(rename = "booleanFunction")] 
-    pub(crate) expr: Option<String>,
+    pub expr: Option<String>,
 
     #[serde(skip)]
     #[derivative(PartialEq = "ignore")]
-    pub(crate) parsed_expr: Option<rustlogic::LogicNode>,
+    pub parsed_expr: Option<rustlogic::LogicNode>,
 }
 
 impl ComponentDefinition {
-    pub(crate) fn instantiate(&self) -> Box<dyn ComponentTrait> {
+    pub fn instantiate(&self) -> Box<dyn ComponentTrait> {
         match self.kind {
             ComponentKind::Builtin => {
                 PREBUILT_REGISTRY.with(|reg| {
@@ -55,7 +53,7 @@ impl ComponentDefinition {
     }
 
     /// Reroutes transparent component definition's IDs into the current circuit.
-    pub(crate) fn reroute_component_def(&self, first_free_id: u32) -> Self {
+    pub fn reroute_component_def(&self, first_free_id: u32) -> Self {
         let mut new_component_def = self.clone();
         let circuit = new_component_def.circuit.as_mut().unwrap();
 

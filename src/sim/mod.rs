@@ -25,6 +25,7 @@ pub struct Simulation {
     pub(crate) elapsed: u128,
 }
 
+#[wasm::wasm_bindgen]
 impl Simulation {
     /// Create a new simulation context.
     pub fn new(config: Config) -> Self {
@@ -90,32 +91,36 @@ impl Simulation {
     }
 
     /// Returns a JSON object containing the circuit state.
-    pub fn circuit_state(&self) -> CircuitState {
+    pub fn circuit_state(&self) -> wasm::JsValue {
         let mut state = CircuitState::default();
         for (&id, component) in self.circuit.components.iter() {
             state.data.insert(id, component.get_state());
         }
 
-        state
+        state.to_wasm_json()
     }
 
-    pub fn set_circuit(&mut self, circuit: serde_json::Value) {
+    pub fn set_circuit(&mut self, circuit: wasm::JsValue) {
         unimplemented!()
     }
 
-    pub fn set_registry(&mut self, registry: serde_json::Value) {
+    pub fn set_registry(&mut self, registry: wasm::JsValue) {
         unimplemented!()
     }
 
-    pub fn update_registry(&mut self, definition: serde_json::Value) {
+    pub fn update_registry(&mut self, definition: wasm::JsValue) {
         unimplemented!()
     }
 
-    pub fn insert_input_event(&mut self, event: serde_json::Value) -> Result<(), UserEventError> {
-        let user_event: UserEvent = serde_json::from_value(event).unwrap();
+    pub fn insert_input_event(&mut self, event: wasm::JsValue) -> Result<(), String> {
+        let user_event: UserEvent = event.into_serde().unwrap();
         let component = self.circuit.components.get(&user_event.component_id).unwrap();
 
-        let events = component.process_user_event(user_event)?;
+        let events = match component.process_user_event(user_event) {
+            Ok(events) => events,
+            Err(e) => return Err(e.to_string()),
+        };
+
         for event in events {
             self.wheel.schedule(component.delay(), event);
         }

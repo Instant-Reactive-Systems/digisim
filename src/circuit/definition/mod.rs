@@ -1,8 +1,6 @@
 use crate::component::definition::Component;
 use super::Connection;
-use crate::wasm;
 
-#[wasm::wasm_bindgen]
 #[derive(Debug, PartialEq, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CircuitDefinition {
