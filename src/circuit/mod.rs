@@ -16,17 +16,18 @@ use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
 use crate::component::{self, Component, ComponentDefinition, Generic, Wiring};
 use DefinitionError::*;
-
+use crate::wasm;
 use self::registry::PREBUILT_REGISTRY;
 
 /// A self-contained collection of all components and its wiring.
+#[wasm::wasm_bindgen]
 #[derive(Debug, Default)]
 pub struct Circuit {
-    pub components: HashMap<Id, Box<dyn Component>>,
-    pub output_components: Vec<Id>,
-    pub connections: HashMap<Connector, Vec<Connector>>,
+    pub(crate) components: HashMap<Id, Box<dyn Component>>,
+    pub(crate) output_components: Vec<Id>,
+    pub(crate) connections: HashMap<Connector, Vec<Connector>>,
 
-    rerouted_defs: HashMap<Id, ComponentDefinition>,
+    pub(crate) rerouted_defs: HashMap<Id, ComponentDefinition>,
 
     /// Maps components IDs to their corresponding component definition ID
     ///
@@ -35,7 +36,7 @@ pub struct Circuit {
 }
 
 impl Circuit {
-    pub fn from_definition(registry: &Registry, mut circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
+    pub(crate) fn from_definition(registry: &Registry, mut circuit_def: CircuitDefinition) -> Result<Self, DefinitionError> {
         // 1.) Iterate through the components in the circuit
         // 2.) Process only non-transparent components, and put transparent ones into a separate
         // list
@@ -255,10 +256,10 @@ fn get_transparent(component: &Box<dyn Component>) -> Option<&Generic> {
 }
 
 #[derive(Debug)]
-pub struct Context<'a> {
-    pub component: component::definition::Component,
-    pub component_def: &'a ComponentDefinition,
-    pub registry: &'a Registry,
+struct Context<'a> {
+    component: component::definition::Component,
+    component_def: &'a ComponentDefinition,
+    registry: &'a Registry,
 }
 
 #[derive(Debug, thiserror::Error)]

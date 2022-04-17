@@ -11,16 +11,18 @@ pub use config::Config;
 use crate::Circuit;
 use crate::circuit::{Registry, Connector, CircuitState};
 use std::collections::HashSet;
+use crate::wasm;
 
 /// Simulation context
 ///
 /// A single tick does not necessarily correspond to a single time unit.
+#[wasm::wasm_bindgen]
 #[derive(Debug)]
 pub struct Simulation {
-    pub circuit: Circuit,
-    pub registry: Registry,
-    pub wheel: TimingWheel,
-    pub elapsed: u128,
+    pub(crate) circuit: Circuit,
+    pub(crate) registry: Registry,
+    pub(crate) wheel: TimingWheel,
+    pub(crate) elapsed: u128,
 }
 
 impl Simulation {

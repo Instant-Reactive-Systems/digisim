@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use crate::component::*;
 use crate::component::definition::{Pins, ComponentKind};
+use crate::wasm;
 
+#[wasm::wasm_bindgen]
 #[derive(Debug)]
 pub struct Registry {
     components: HashMap<i32, ComponentDefinition>,
@@ -12,7 +14,7 @@ impl Registry {
         self.components.insert(def.id, def);
     }
 
-    pub fn get_definition(&self, id: i32) -> Result<&ComponentDefinition, RegistryError> {
+    pub(crate) fn get_definition(&self, id: i32) -> Result<&ComponentDefinition, RegistryError> {
         self.components.get(&id).ok_or(RegistryError::InvalidDefinitionId(id))
     }
 }
