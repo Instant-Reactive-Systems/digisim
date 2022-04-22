@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use crate::component::*;
 use crate::component::definition::{Pins, ComponentKind};
 
-use super::Params;
-
 #[derive(Debug, serde::Deserialize)]
 pub struct Registry {
     components: HashMap<i32, ComponentDefinition>,
