@@ -1,14 +1,17 @@
-use crate::component::definition::Component;
-use super::Connection;
+use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, serde::Deserialize)]
+use crate::component::definition::Component;
+use super::{Connection, Params, Id};
+
+#[derive(Debug, PartialEq, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CircuitDefinition {
-    pub(crate) id: i32,
-    pub(crate) name: String,
+    pub id: i32,
+    pub name: String,
     #[serde(rename = "description")] 
-    pub(crate) desc: String,
-    pub(crate) components: Vec<Component>,
-    pub(crate) connections: Vec<Connection>,
+    pub desc: String,
+    pub components: Vec<Component>,
+    pub connections: Vec<Connection>,
+    pub params: Option<HashMap<Id, Params>>,
 }
 

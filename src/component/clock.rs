@@ -1,6 +1,7 @@
 use std::any::Any;
 
 use crate::Component;
+use crate::circuit::Params;
 use crate::sim::Event;
 
 #[derive(Debug, Default)]
@@ -47,6 +48,19 @@ impl Clock {
         Self {
             output: false,
             cycle_delay,
+        }
+    }
+
+    pub fn from_params(params: Params) -> Self {
+        let cycle_delay = if let Some(param) = params.get("delay") {
+            param.as_u64().unwrap() as u32
+        } else {
+            1
+        };
+
+        Self {
+            cycle_delay,
+            ..Default::default()
         }
     }
 }

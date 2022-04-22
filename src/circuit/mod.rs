@@ -4,6 +4,7 @@ mod connection;
 mod state;
 pub mod registry;
 mod definition;
+mod params;
 pub use id::Id;
 pub use connector::Connector;
 pub use connection::Connection;
@@ -11,6 +12,7 @@ use rassert_rs::rassert;
 pub use state::CircuitState;
 pub use registry::Registry;
 pub use definition::CircuitDefinition;
+pub use params::Params;
 
 use std::collections::HashMap;
 use crate::component::definition::ComponentKind;
@@ -48,6 +50,7 @@ impl Circuit {
             let ctx = Context {
                 component,
                 component_def,
+                params: circuit_def.params.as_ref(),
                 registry,
             };
 
@@ -57,7 +60,7 @@ impl Circuit {
                 ComponentKind::Functional => circuit.process_functional(ctx)?,
                 ComponentKind::Transparent => {
                     // Insert transparent component ahead of time for IDs to work
-                    circuit.components.insert(ctx.component.id, ctx.component_def.instantiate());
+                    circuit.components.insert(ctx.component.id, ctx.component_def.instantiate(Params::default()));
                     transparent_components.push(ctx)
                 },
             }
@@ -115,7 +118,12 @@ impl Circuit {
     fn process_builtin(&mut self, ctx: Context) -> Result<(), DefinitionError> {
         rassert!(!self.components.contains_key(&ctx.component.id), ComponentIdAlreadyTaken(ctx.component.id));
 
-        let component = ctx.component_def.instantiate();
+        let params = if let Some(params) = ctx.params {
+            params.get(&ctx.component.id).cloned().unwrap_or_default()
+        } else {
+            Default::default()
+        };
+        let component = ctx.component_def.instantiate(params);
         if component.is_output() {
             self.output_components.push(ctx.component.id);
         }
@@ -150,6 +158,7 @@ impl Circuit {
             let ctx = Context {
                 component,
                 component_def,
+                params: rerouted_circuit.params.as_ref(),
                 registry: ctx.registry,
             };
 
@@ -159,7 +168,7 @@ impl Circuit {
                 ComponentKind::Functional => self.process_functional(ctx)?,
                 ComponentKind::Transparent => {
                     // Insert transparent component ahead of time for IDs to work
-                    self.components.insert(ctx.component.id, ctx.component_def.instantiate());
+                    self.components.insert(ctx.component.id, ctx.component_def.instantiate(Default::default()));
                     transparent_components.push(ctx)
                 },
             }
@@ -257,6 +266,7 @@ fn get_transparent(component: &Box<dyn Component>) -> Option<&Generic> {
 struct Context<'a> {
     component: component::definition::Component,
     component_def: &'a ComponentDefinition,
+    params: Option<&'a HashMap<Id, Params>>,
     registry: &'a Registry,
 }
 

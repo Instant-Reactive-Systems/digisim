@@ -11,6 +11,7 @@ pub use component::Component;
 
 use super::Component as ComponentTrait;
 use derivative::Derivative;
+use crate::circuit::{Params, Id};
 use crate::circuit::registry::PREBUILT_REGISTRY;
 use crate::component::Generic;
 
@@ -37,11 +38,11 @@ pub struct ComponentDefinition {
 }
 
 impl ComponentDefinition {
-    pub fn instantiate(&self) -> Box<dyn ComponentTrait> {
+    pub fn instantiate(&self, params: Params) -> Box<dyn ComponentTrait> {
         match self.kind {
             ComponentKind::Builtin => {
                 PREBUILT_REGISTRY.with(|reg| {
-                    (reg.data[&self.id].factory)()
+                    (reg.data[&self.id].factory)(params)
                 })
             },
             _ => {
@@ -71,6 +72,11 @@ impl ComponentDefinition {
         let pin_mapping = new_component_def.pin_mapping.as_mut().unwrap();
         pin_mapping.input.iter_mut().flatten().for_each(|x| x.component += first_free_id);
         pin_mapping.output.iter_mut().flatten().for_each(|x| x.component += first_free_id);
+
+        // Update params field
+        if let Some(params) = circuit.params.as_mut() {
+            *params = params.drain().map(|(id, params_)| (id + first_free_id, params_)).collect();
+        }
 
         new_component_def
     }
@@ -106,6 +112,7 @@ mod tests {
                 ],
             }),
             circuit: Some(Circuit {
+                params: None,
                 components: vec![
                     Component { def_id: -1, id: 0 },
                     Component { def_id: -1, id: 1 },
@@ -156,6 +163,7 @@ mod tests {
                 ],
             }),
             circuit: Some(Circuit {
+                params: None,
                 components: vec![
                     Component { def_id: -1, id: 0 },
                     Component { def_id: -1, id: 1 },
@@ -198,6 +206,7 @@ mod tests {
                 ],
             }),
             circuit: Some(Circuit {
+                params: None,
                 components: vec![
                     Component { def_id: -1, id: 5 },
                     Component { def_id: -1, id: 6 },

@@ -1,6 +1,6 @@
 use std::any::Any;
 use super::Component;
-use crate::sim::Event;
+use crate::{sim::Event, circuit::Params};
 
 #[derive(Debug, Clone, Default)]
 pub struct Nand {
@@ -54,6 +54,21 @@ impl Component for Nand {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+}
+
+impl Nand {
+    pub fn from_params(params: Params) -> Self {
+        let delay = if let Some(param) = params.get("delay") {
+            param.as_u64().unwrap() as u32
+        } else {
+            1
+        };
+
+        Self {
+            delay,
+            ..Default::default()
+        }
     }
 }
 

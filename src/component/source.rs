@@ -1,6 +1,6 @@
 use std::any::Any;
 use super::Component;
-use crate::sim::Event;
+use crate::{sim::Event, circuit::Params};
 
 #[derive(Debug, Clone, Default)]
 pub struct Source;
@@ -34,6 +34,12 @@ impl Component for Source {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+}
+
+impl Source {
+    pub fn from_params(_: Params) -> Self {
+        Default::default()
     }
 }
 

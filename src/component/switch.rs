@@ -1,5 +1,5 @@
 use std::any::Any;
-use crate::circuit::Connector;
+use crate::circuit::{Connector, Params};
 use super::Component;
 use crate::sim::{Event, UserEvent, UserEventError};
 
@@ -51,5 +51,20 @@ impl Component for Switch {
 			_ => Err(UserEventError::InvalidPayload("Switch only receives the message 'toggle'.".into())),
 		}
 	}
+}
+
+impl Switch {
+    pub fn from_params(params: Params) -> Self {
+        let delay = if let Some(param) = params.get("delay") {
+            param.as_u64().unwrap() as u32
+        } else {
+            1
+        };
+
+        Self {
+            delay,
+            ..Default::default()
+        }
+    }
 }
 
