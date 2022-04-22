@@ -101,15 +101,18 @@ impl Simulation {
     }
 
     pub fn set_circuit(&mut self, circuit: wasm::JsValue) {
-        unimplemented!()
+        let circuit_def = circuit.into_serde().expect("Expected the circuit definition to be in correct format.");
+        self.circuit = Circuit::from_definition(&self.registry, circuit_def).unwrap();
     }
 
     pub fn set_registry(&mut self, registry: wasm::JsValue) {
-        unimplemented!()
+        let registry = registry.into_serde().expect("Expected the registry to be in correct format.");
+        self.registry = registry;
     }
 
     pub fn update_registry(&mut self, definition: wasm::JsValue) {
-        unimplemented!()
+        let component_def = definition.into_serde().expect("Expected the component definition to be in correct format");
+        self.registry.insert(component_def);
     }
 
     pub fn insert_input_event(&mut self, event: wasm::JsValue) -> Result<(), String> {
