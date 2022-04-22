@@ -4,7 +4,7 @@ use crate::component::definition::{Pins, ComponentKind};
 
 use super::Params;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize)]
 pub struct Registry {
     components: HashMap<i32, ComponentDefinition>,
 }
