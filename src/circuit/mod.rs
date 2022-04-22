@@ -74,7 +74,8 @@ impl Circuit {
         // Insert wiring component and add it to circuit definition's connections for top-level
         // components
         let mut wiring = Wiring::default();
-        for (count, component) in circuit_def.components.iter().enumerate() {
+        let mut count = 0;
+        for component in circuit_def.components.iter() {
             let def = registry.get_definition(component.def_id).unwrap();
 
             let a = def.pins.input.len();
@@ -85,6 +86,7 @@ impl Circuit {
                 wiring.add_output(from);
 
                 circuit_def.connections.push(Connection { from, to });
+                count += 1;
             }
         }
         circuit.components.insert(Id::MAX, Box::new(wiring));

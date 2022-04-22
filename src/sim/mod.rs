@@ -8,7 +8,7 @@ pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
 pub use config::Config;
 
-use crate::Circuit;
+use crate::{Circuit, log};
 use crate::circuit::{Registry, Connector, CircuitState};
 use std::collections::HashSet;
 use crate::wasm;
@@ -93,8 +93,9 @@ impl Simulation {
     /// Returns a JSON object containing the circuit state.
     pub fn circuit_state(&self) -> wasm::JsValue {
         let mut state = CircuitState::default();
-        for (&id, component) in self.circuit.components.iter() {
-            state.data.insert(id, component.get_state());
+        for id in self.circuit.output_components.iter() {
+            let component = self.circuit.components.get(id).unwrap();
+            state.data.insert(*id, component.get_state());
         }
 
         state.to_wasm_json()
