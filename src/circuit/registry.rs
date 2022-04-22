@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use crate::component::*;
 use crate::component::definition::{Pins, ComponentKind};
 
+use super::Params;
+
 #[derive(Debug)]
 pub struct Registry {
     components: HashMap<i32, ComponentDefinition>,
@@ -44,7 +46,7 @@ pub struct PrebuiltRegistry {
 
 pub struct PrebuiltEntry {
     pub def: ComponentDefinition,
-    pub factory: Box<dyn Fn() -> Box<dyn Component>>,
+    pub factory: Box<dyn Fn(Params) -> Box<dyn Component>>,
 }
 
 thread_local! {
@@ -82,7 +84,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Nand::default())),
+            factory: Box::new(|params| Box::new(Nand::from_params(params))),
         });
 
         // Tristate
@@ -102,7 +104,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Tristate::default())),
+            factory: Box::new(|params| Box::new(Tristate::from_params(params))),
         });
 
         // Clock
@@ -122,7 +124,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Clock::default())),
+            factory: Box::new(|params| Box::new(Clock::from_params(params))),
         });
 
         // Ground
@@ -142,7 +144,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Source::default())),
+            factory: Box::new(|params| Box::new(Ground::from_params(params))),
         });
 
         // Source
@@ -162,7 +164,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Source::default())),
+            factory: Box::new(|params| Box::new(Source::from_params(params))),
         });
 
         // Switch
@@ -182,7 +184,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Switch::default())),
+            factory: Box::new(|params| Box::new(Switch::from_params(params))),
         });
 
         // Led
@@ -202,7 +204,7 @@ impl Default for PrebuiltRegistry {
                 expr: None,
                 parsed_expr: None,
             },
-            factory: Box::new(|| Box::new(Led::default())),
+            factory: Box::new(|params| Box::new(Led::from_params(params))),
         });
 
         Self {

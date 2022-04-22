@@ -1,5 +1,6 @@
 use std::any::Any;
 use super::Component;
+use crate::circuit::Params;
 use crate::sim::Event;
 use crate::Circuit;
 
@@ -55,6 +56,21 @@ impl Component for Tristate {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+}
+
+impl Tristate {
+    pub fn from_params(params: Params) -> Self {
+        let delay = if let Some(param) = params.get("delay") {
+            param.as_u64().unwrap() as u32
+        } else {
+            1
+        };
+
+        Self {
+            delay,
+            ..Default::default()
+        }
     }
 }
 
