@@ -8,7 +8,7 @@ pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
 pub use config::Config;
 
-use crate::{Circuit, log};
+use crate::Circuit;
 use crate::circuit::{Registry, Connector, CircuitState};
 use std::collections::HashSet;
 use crate::wasm;
@@ -50,7 +50,7 @@ impl Simulation {
         for event in events {
             let component = self.circuit.components.get_mut(&event.src.component).unwrap();
             component.update(event);
-            
+
             for to in self.circuit.connections[&event.src].iter() {
                 let component = self.circuit.components.get_mut(&to.component).unwrap();
                 component.set_pin(to.pin, event);

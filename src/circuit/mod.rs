@@ -82,14 +82,19 @@ impl Circuit {
             let b = a + def.pins.output.len();
             for pin in a..b {
                 let from = Connector { component: component.id, pin: pin as u32 };
-                let to = vec![Connector { component: Id::MAX, pin: count as u32 }];
+                let mut to = vec![Connector { component: Id::MAX, pin: count as u32 }];
                 wiring.add_output(from);
 
-                circuit_def.connections.push(Connection { from, to });
+                if let Some(found) = circuit_def.connections.iter_mut().find(|x| x.from == from) {
+                    found.to.append(&mut to);
+                } else {
+                    circuit_def.connections.push(Connection { from, to });
+                }
                 count += 1;
             }
         }
         circuit.components.insert(Id::MAX, Box::new(wiring));
+        circuit.output_components.push(Id::MAX);
 
         // Insert all top-level connections
         for connection in circuit_def.connections.iter() {
