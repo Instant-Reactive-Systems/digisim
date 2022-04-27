@@ -10,6 +10,7 @@ pub struct Memory {
     // 0 - read
     // 1 - write
     rw_select: bool,
+    // "active-low" (true for disconnect, false for connected)  
     chip_select: bool,
     address: Bits,
     data_in: Bits,
@@ -46,7 +47,7 @@ impl Component for Memory {
 
     fn set_pin(&mut self, pin: u32, event: Event) {
         // Skip if the pin being set isn't CS or if the chip select isn't set
-        if pin != 0 || !self.chip_select { return }
+        if pin != 0 || self.chip_select { return }
 
         self.changed = true;
 
@@ -92,7 +93,7 @@ impl Default for Memory {
     fn default() -> Self {
         Self {
             rw_select: false,
-            chip_select: false,
+            chip_select: true,
             address: Bits::new(16),
             data_in: Bits::new(8),
             data_out: Bits::new(8),
