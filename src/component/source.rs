@@ -12,7 +12,10 @@ impl Component for Source {
 
     fn update(&mut self, _event: Event) {}
 
-    fn set_pin(&mut self, _pin: u32, _event: Event) {}
+    fn set_pin(&mut self, _pin: u32, _event: Event) {
+        // set_pin is not implemented for source components
+        unreachable!()
+    }
 
     fn get_state(&self) -> serde_json::Value {
         unimplemented!("Source does not implement get_state since it is not an output component.");
