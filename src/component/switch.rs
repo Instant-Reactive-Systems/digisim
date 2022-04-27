@@ -1,7 +1,10 @@
 use std::any::Any;
+use rassert_rs::rassert;
+
 use crate::circuit::{Connector, Params};
 use super::Component;
 use crate::sim::{Event, UserEvent, UserEventError};
+use UserEventError::*;
 
 #[derive(Debug, Clone, Default)]
 pub struct Switch {
@@ -48,11 +51,11 @@ impl Component for Switch {
 	}
 
 	fn process_user_event(&self, user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {
+        rassert!(user_event.payload.is_string() && user_event.payload.as_str().unwrap() == "toggle", 
+                 InvalidPayload("Switch only receives the message 'toggle'.".into()));
+
 		let src = Connector { component: user_event.component_id, pin: 0 };
-		match user_event.payload.as_ref() {
-			"toggle" => Ok(vec![Event::new(!self.output, src)]),
-			_ => Err(UserEventError::InvalidPayload("Switch only receives the message 'toggle'.".into())),
-		}
+        Ok(vec![Event::new(!self.output, src)])
 	}
 }
 

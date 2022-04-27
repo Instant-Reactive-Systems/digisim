@@ -10,6 +10,6 @@ pub enum UserEventError {
 #[serde(rename_all = "camelCase")]
 pub struct UserEvent {
 	pub component_id: Id,
-	pub payload: String,
+	pub payload: serde_json::Value,
 }
 
