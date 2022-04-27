@@ -16,13 +16,13 @@ impl Component for Switch {
 	}
 
 	fn update(&mut self, event: Event) {
-        match pin {
+        match event.src.pin {
 			0 => self.output = event.value,
 			_ => {}
 		}
     }
 
-	fn set_pin(&mut self, pin: u32, event: Event) {
+	fn set_pin(&mut self, _pin: u32, _event: Event) {
         // set_pin is not implemented for source components
         unreachable!()
 	}
