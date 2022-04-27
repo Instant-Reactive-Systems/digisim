@@ -8,6 +8,7 @@ mod ground;
 mod source;
 mod clock;
 mod led;
+mod memory;
 
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
@@ -19,6 +20,7 @@ pub use ground::Ground;
 pub use source::Source;
 pub use clock::Clock;
 pub use led::Led;
+pub use memory::Memory;
 
 use std::any::Any;
 use std::fmt::Debug;
