@@ -15,13 +15,16 @@ impl Component for Switch {
 		Some(vec![(0, self.output)])
 	}
 
-	fn update(&mut self, _event: Event) {}
-
-	fn set_pin(&mut self, pin: u32, event: Event) {
-		match pin {
+	fn update(&mut self, event: Event) {
+        match pin {
 			0 => self.output = event.value,
 			_ => {}
 		}
+    }
+
+	fn set_pin(&mut self, pin: u32, event: Event) {
+        // set_pin is not implemented for source components
+        unreachable!()
 	}
 
 	fn get_state(&self) -> serde_json::Value {
