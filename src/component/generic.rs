@@ -9,27 +9,27 @@ pub struct Generic {
 
 impl Component for Generic {
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        todo!()
+        unreachable!()
     }
 
-    fn update(&mut self, event: Event) {
-        todo!()
+    fn update(&mut self, _event: Event) {
+        unreachable!()
     }
 
-    fn set_pin(&mut self, pin: u32, event: Event) {
-        todo!()
+    fn set_pin(&mut self, _pin: u32, _event: Event) {
+        unreachable!()
     }
 
     fn get_state(&self) -> serde_json::Value {
-        todo!()
+        unreachable!()
     }
 
     fn delay(&self) -> u32 {
-        todo!()
+        unreachable!()
     }
 
     fn is_source(&self) -> bool {
-        todo!()
+        false
     }
 
     fn is_output(&self) -> bool {
