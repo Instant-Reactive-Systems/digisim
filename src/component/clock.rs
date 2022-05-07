@@ -12,6 +12,10 @@ pub struct Clock {
 }
 
 impl Component for Clock {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        None
+    }
+
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         Some(vec![(0, !self.output)])
     }

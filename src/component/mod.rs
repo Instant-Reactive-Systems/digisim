@@ -28,6 +28,9 @@ use crate::sim::{Event, UserEvent, UserEventError};
 
 /// Trait that all components implement.
 pub trait Component: Any + Debug {
+    /// Initial evaluation for the component.
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>>;
+
     /// Evaluates the current state of the component
     /// and returns changed outputs, if any.
     fn evaluate(&self) -> Option<Vec<(u32, bool)>>;

@@ -6,8 +6,12 @@ use crate::{sim::Event, circuit::Params};
 pub struct Source;
 
 impl Component for Source {
-    fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
         Some(vec![(0, true)])
+    }
+
+    fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        unreachable!()
     }
 
     fn update(&mut self, _event: Event) {}

@@ -74,17 +74,15 @@ impl Simulation {
         }
     }
 
-    /// Initializes the simulation by inserting events from source components.
+    /// Initializes the simulation by inserting initial events from all components.
     pub fn init(&mut self) {
         for (&component_id, component) in self.circuit.components.iter() {
-            if component.is_source() {
-                if let Some(output) = component.evaluate() {
-                    for (pin_id, value) in output {
-                        let src = Connector::new(component_id, pin_id);
-                        let event = Event::new(value, src);
+            if let Some(output) = component.initial_evaluate() {
+                for (pin_id, value) in output {
+                    let src = Connector::new(component_id, pin_id);
+                    let event = Event::new(value, src);
 
-                        self.wheel.schedule(0, event);
-                    }
+                    self.wheel.schedule(0, event);
                 }
             }
         }

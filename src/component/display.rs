@@ -13,6 +13,10 @@ pub struct GenericDisplay {
 }
 
 impl Component for GenericDisplay {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        None
+    }
+
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         None
 	}

@@ -12,6 +12,11 @@ pub struct Nand {
 }
 
 impl Component for Nand {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        let new = !(self.a & self.b);
+        Some(vec![(2, new)])
+    }
+
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         let new = !(self.a & self.b);
         if new == self.output {

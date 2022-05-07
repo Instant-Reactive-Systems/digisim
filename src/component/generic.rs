@@ -8,6 +8,10 @@ pub struct Generic {
 }
 
 impl Component for Generic {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        unreachable!()
+    }
+
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         unreachable!()
     }

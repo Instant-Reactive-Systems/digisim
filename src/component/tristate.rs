@@ -2,7 +2,6 @@ use std::any::Any;
 use super::Component;
 use crate::circuit::Params;
 use crate::sim::Event;
-use crate::Circuit;
 
 #[derive(Debug, Clone, Default)]
 pub struct Tristate {
@@ -14,6 +13,10 @@ pub struct Tristate {
 }
 
 impl Component for Tristate {
+    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
+        None
+    }
+
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         // Component is disconnected (z-state)
         if self.b == false || self.a == self.output {
