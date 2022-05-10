@@ -10,16 +10,13 @@ pub struct Tristate {
     output: bool,
 
     delay: u32,
+    initted: bool,
 }
 
 impl Component for Tristate {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         // Component is disconnected (z-state)
-        if self.b == false || self.a == self.output {
+        if self.initted && (self.b == false || self.a == self.output) {
             return None;
         }
 
@@ -27,6 +24,8 @@ impl Component for Tristate {
     }
 
     fn update(&mut self, event: Event) {
+        self.initted = true;
+
         match event.src.pin {
             2 => self.output = event.value,
             _ => {}
@@ -69,6 +68,7 @@ impl Component for Tristate {
         self.a = false;
         self.b = false;
         self.output = false;
+        self.initted = false;
     }
 }
 

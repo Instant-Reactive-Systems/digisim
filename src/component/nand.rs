@@ -9,17 +9,13 @@ pub struct Nand {
     output: bool,
 
     delay: u32,
+    initted: bool,
 }
 
 impl Component for Nand {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        let new = !(self.a & self.b);
-        Some(vec![(2, new)])
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         let new = !(self.a & self.b);
-        if new == self.output {
+        if self.initted && new == self.output {
             return None;
         }
 
@@ -27,6 +23,8 @@ impl Component for Nand {
     }
 
     fn update(&mut self, event: Event) {
+        self.initted = true;
+
         match event.src.pin {
             2 => self.output = event.value,
             _ => {}
@@ -69,6 +67,7 @@ impl Component for Nand {
         self.a = false;
         self.b = false;
         self.output = false;
+        self.initted = false;
     }
 }
 

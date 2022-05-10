@@ -3,9 +3,9 @@ mod report;
 pub use requirements::CombinationalRequirements;
 pub use report::{ValidationReport, ValidationError, JsValidationReport, JsValidationError};
 
-use crate::component::Led;
+use crate::component::{Led, Switch};
 use crate::sim::Event;
-use crate::{Simulation, Circuit, wasm};
+use crate::{Simulation, Circuit, wasm, log};
 use crate::circuit::registry::{SWITCH_ID, LED_ID, REGISTRY};
 use crate::component::definition::{ComponentDefinition, ComponentKind, Component};
 use crate::circuit::{CircuitDefinition, Registry, Connection, Connector};
@@ -71,9 +71,11 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
         // Set inputs
         for (i, &input) in inputs.iter().enumerate() {
             let id = (i + 1) as u32;
-            let src = Connector::new(id, 0);
-            ctx.wheel.schedule(0, Event::new(input, src));
+            let switch = ctx.circuit.components.get_mut(&id).unwrap().as_any_mut().downcast_mut::<Switch>().unwrap();
+            switch.output = input;
         }
+
+        ctx.init();
 
         // Advance the simulation
         if let Some(max_runtime) = requirements.max_runtime {

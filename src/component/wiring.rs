@@ -10,10 +10,6 @@ pub struct Wiring {
 }
 
 impl Component for Wiring {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         None
     }

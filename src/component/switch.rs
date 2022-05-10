@@ -14,10 +14,6 @@ pub struct Switch {
 }
 
 impl Component for Switch {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
 	fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
 		Some(vec![(0, self.output)])
 	}

@@ -8,7 +8,7 @@ pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
 pub use config::Config;
 
-use crate::Circuit;
+use crate::{Circuit, log};
 use crate::circuit::registry::REGISTRY;
 use crate::circuit::{Connector, CircuitState};
 use std::collections::HashSet;
@@ -40,14 +40,16 @@ impl Simulation {
         let mut activity_set = HashSet::new();
 
         // Advance the timing wheel and record the elapsed time
-        let (elapsed, events) = self.wheel.advance();
-        self.elapsed += elapsed as u128;
+        let events = self.wheel.advance();
+        self.elapsed += 1u128;
 
         // Go through all the events, update the source component, 
         // set and schedule its dependent components
         for event in events {
             let component = self.circuit.components.get_mut(&event.src.component).unwrap();
             component.update(event);
+
+            log!("At elapsed {}: {:?}", self.elapsed, event);
 
             for to in self.circuit.connections[&event.src].iter() {
                 let component = self.circuit.components.get_mut(&to.component).unwrap();
@@ -82,12 +84,14 @@ impl Simulation {
     /// Initializes the simulation by inserting initial events from all components.
     pub fn init(&mut self) {
         for (&component_id, component) in self.circuit.components.iter() {
-            if let Some(output) = component.initial_evaluate() {
-                for (pin_id, value) in output {
-                    let src = Connector::new(component_id, pin_id);
-                    let event = Event::new(value, src);
+            if component.is_source() {
+                if let Some(output) = component.evaluate() {
+                    for (pin_id, value) in output {
+                        let src = Connector::new(component_id, pin_id);
+                        let event = Event::new(value, src);
 
-                    self.wheel.schedule(0, event);
+                        self.wheel.schedule(0, event);
+                    }
                 }
             }
         }

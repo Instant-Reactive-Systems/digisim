@@ -12,11 +12,6 @@ pub struct Clock {
 }
 
 impl Component for Clock {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        // We need to kickstart the repetition cycle by emitting a signal into the simulator
-        Some(vec![(0, false)])
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         Some(vec![(0, !self.output)])
     }
