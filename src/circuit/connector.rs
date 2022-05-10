@@ -1,8 +1,10 @@
+use std::fmt::Display;
+
 use super::Id;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize, serde::Serialize)]
 pub struct Connector {
-    pub component: Id,
+    #[serde(rename = "componentId")] pub component: Id,
     pub pin: Id,
 }
 
@@ -12,6 +14,12 @@ impl Connector {
             component: component_id,
             pin: pin_id,
         }
+    }
+}
+
+impl Display for Connector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.component, self.pin)
     }
 }
 
