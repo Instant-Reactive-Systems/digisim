@@ -2,7 +2,7 @@ use super::Event;
 use std::vec::Drain;
 
 /// An event storing structure.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct TimingWheel {
     max_delay: u32,
     current_time: u32,
@@ -38,6 +38,16 @@ impl TimingWheel {
     pub fn schedule(&mut self, delay: u32, event: Event) {
         let scheduled_time = (self.current_time + delay) % self.max_delay;
         self.wheel[scheduled_time as usize].push(event);
+    }
+}
+
+impl Default for TimingWheel {
+    fn default() -> Self {
+        Self {
+            max_delay: 1024,
+            current_time: 0,
+            wheel: Default::default(),
+        }
     }
 }
 
