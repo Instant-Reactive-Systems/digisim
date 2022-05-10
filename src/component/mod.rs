@@ -53,8 +53,14 @@ pub trait Component: Any + Debug {
     /// Checks if the component is an output component.
     fn is_output(&self) -> bool;
 
-    /// Cast to Any.
+    /// Cast to &Any.
     fn as_any(&self) -> &dyn Any;
+
+    /// Cast to &mut Any.
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+    
+    /// Resets the component's state to its default.
+    fn reset(&mut self);
 
     /// Processes a user event.
     fn process_user_event(&self, _user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {

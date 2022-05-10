@@ -9,7 +9,8 @@ pub use wheel::TimingWheel;
 pub use config::Config;
 
 use crate::Circuit;
-use crate::circuit::{Registry, Connector, CircuitState};
+use crate::circuit::registry::REGISTRY;
+use crate::circuit::{Connector, CircuitState};
 use std::collections::HashSet;
 use crate::wasm;
 
@@ -17,10 +18,9 @@ use crate::wasm;
 ///
 /// A single tick does not necessarily correspond to a single time unit.
 #[wasm::wasm_bindgen]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Simulation {
     pub(crate) circuit: Circuit,
-    pub(crate) registry: Registry,
     pub(crate) wheel: TimingWheel,
     pub(crate) elapsed: u128,
 }
@@ -30,10 +30,8 @@ impl Simulation {
     /// Create a new simulation context.
     pub fn new(config: Config) -> Self {
         Self {
-            circuit: Default::default(),
-            registry: Default::default(),
             wheel: TimingWheel::new(config.max_delay),
-            elapsed: 0,
+            ..Default::default()
         }
     }
 
@@ -74,6 +72,13 @@ impl Simulation {
         }
     }
 
+    /// Ticks the simulation for the specified amount.
+    pub fn tick_for(&mut self, num_ticks: usize) {
+        for _ in 0..num_ticks {
+            self.tick();
+        }
+    }
+
     /// Initializes the simulation by inserting initial events from all components.
     pub fn init(&mut self) {
         for (&component_id, component) in self.circuit.components.iter() {
@@ -86,6 +91,10 @@ impl Simulation {
                 }
             }
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.circuit.components.values_mut().for_each(|x| x.reset());
     }
 
     /// Returns a JSON object containing the circuit state.
@@ -101,17 +110,10 @@ impl Simulation {
 
     pub fn set_circuit(&mut self, circuit: wasm::JsValue) {
         let circuit_def = circuit.into_serde().expect("Expected the circuit definition to be in correct format.");
-        self.circuit = Circuit::from_definition(&self.registry, circuit_def).unwrap();
-    }
-
-    pub fn set_registry(&mut self, registry: wasm::JsValue) {
-        let registry = registry.into_serde().expect("Expected the registry to be in correct format.");
-        self.registry = registry;
-    }
-
-    pub fn update_registry(&mut self, definition: wasm::JsValue) {
-        let component_def = definition.into_serde().expect("Expected the component definition to be in correct format");
-        self.registry.insert(component_def);
+        REGISTRY.with(|reg| {
+            let reg = reg.lock();
+            self.circuit = Circuit::from_definition(&reg, circuit_def).unwrap();
+        });
     }
 
     pub fn insert_input_event(&mut self, event: wasm::JsValue) -> Result<(), String> {

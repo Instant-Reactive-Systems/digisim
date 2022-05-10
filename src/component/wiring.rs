@@ -54,6 +54,14 @@ impl Component for Wiring {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn reset(&mut self) {
+        self.values.iter_mut().for_each(|x| *x = false);
+    }
 }
 
 impl Wiring {

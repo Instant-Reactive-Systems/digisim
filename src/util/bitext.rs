@@ -5,6 +5,7 @@ pub trait BitExt {
     fn set_bit_to(&mut self, n: usize, value: bool);
     fn set_bit(&mut self, n: usize);
     fn clear_bit(&mut self, n: usize);
+    fn clear_all(&mut self);
 }
 
 
@@ -27,6 +28,10 @@ macro_rules! bitext_impl_for {
 
             fn clear_bit(&mut self, n: usize) {
                 *self &= !(1 << n);
+            }
+
+            fn clear_all(&mut self) {
+                *self &= 0;
             }
         }
     };

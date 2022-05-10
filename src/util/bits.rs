@@ -31,6 +31,7 @@ impl Bits {
 
     pub fn set_bit(&mut self, n: usize, value: bool) {
         debug_assert!(n < self.size, "Cannot access out-of-bounds bit.");
+
         match &mut self.inner {
             Optimized(bits) => bits.set_bit_to(n, value),
             Dynamic(bits) => bits[n] = value,
@@ -67,6 +68,13 @@ impl Bits {
                 res
             },
             Dynamic(bits) => bits.clone(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        match &mut self.inner {
+            Optimized(bits) => bits.clear_all(),
+            Dynamic(bits) => bits.iter_mut().for_each(|bit| *bit = false),
         }
     }
 }

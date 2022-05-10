@@ -8,7 +8,7 @@ use UserEventError::*;
 
 #[derive(Debug, Clone, Default)]
 pub struct Switch {
-	output: bool,
+	pub(crate) output: bool,
 
 	delay: u32,
 }
@@ -54,6 +54,10 @@ impl Component for Switch {
 		self
 	}
 
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
 	fn process_user_event(&self, user_event: UserEvent) -> Result<Vec<Event>, UserEventError> {
         rassert!(user_event.payload.is_string() && user_event.payload.as_str().unwrap() == "toggle", 
                  InvalidPayload("Switch only receives the message 'toggle'.".into()));
@@ -61,6 +65,10 @@ impl Component for Switch {
 		let src = Connector { component: user_event.component_id, pin: 0 };
         Ok(vec![Event::new(!self.output, src)])
 	}
+
+    fn reset(&mut self) {
+        self.output = false;
+    }
 }
 
 impl Switch {

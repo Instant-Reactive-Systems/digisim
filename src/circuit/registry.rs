@@ -1,15 +1,20 @@
 use std::collections::HashMap;
-use crate::component::*;
+use crate::{component::*, wasm};
 use crate::component::definition::{Pins, ComponentKind};
+use parking_lot::Mutex;
 
 use super::Params;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct Registry {
     components: HashMap<i32, ComponentDefinition>,
 }
 
 impl Registry {
+    pub fn replace(&mut self, other: Registry) {
+        self.components = other.components;
+    }
+
     pub fn insert(&mut self, def: ComponentDefinition) {
         self.components.insert(def.id, def);
     }
@@ -51,6 +56,19 @@ pub struct PrebuiltEntry {
 
 thread_local! {
     pub static PREBUILT_REGISTRY: PrebuiltRegistry = PrebuiltRegistry::default();
+    pub static REGISTRY: Mutex<Registry> = Mutex::new(Registry::default());
+}
+
+#[wasm::wasm_bindgen]
+pub fn set_registry(registry: wasm::JsValue) {
+    let registry = registry.into_serde().expect("Expected the registry to be in correct format.");
+    REGISTRY.with(|reg| reg.lock().replace(registry));
+}
+
+#[wasm::wasm_bindgen]
+pub fn update_registry(definition: wasm::JsValue) {
+    let component_def = definition.into_serde().expect("Expected the component definition to be in correct format");
+    REGISTRY.with(|reg| reg.lock().insert(component_def))
 }
 
 // Prebuilt IDs

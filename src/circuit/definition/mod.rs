@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::component::definition::Component;
 use super::{Connection, Params, Id};
 
-#[derive(Debug, PartialEq, Clone, serde::Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CircuitDefinition {
     pub id: i32,

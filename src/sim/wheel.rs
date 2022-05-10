@@ -2,7 +2,7 @@ use super::Event;
 use std::vec::Drain;
 
 /// An event storing structure.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TimingWheel {
     max_delay: u32,
     current_time: u32,

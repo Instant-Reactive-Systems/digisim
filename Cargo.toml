@@ -1,6 +1,6 @@
 [package]
 name = "digisim"
-version = "0.2.25"
+version = "0.3.0"
 edition = "2021"
 
 [lib]
@@ -16,7 +16,9 @@ rassert-rs = "1.0"
 thiserror = "1.0"
 rustlogic = "0.2"
 derivative = "2.2"
+parking_lot = "0.12"
 wasm-bindgen = { version = "0.2.63", features = ["serde-serialize"] }
+js-sys = { version = "0.3.57" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
