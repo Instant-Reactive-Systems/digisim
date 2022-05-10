@@ -46,7 +46,7 @@ impl Default for TimingWheel {
         Self {
             max_delay: 1024,
             current_time: 0,
-            wheel: Default::default(),
+            wheel: vec![Default::default(); 1024],
         }
     }
 }
