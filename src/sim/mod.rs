@@ -8,8 +8,8 @@ pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
 pub use config::Config;
 
-use crate::Circuit;
-use crate::circuit::{Registry, Connector, CircuitState};
+use crate::circuit::registry::REGISTRY;
+use crate::circuit::{Circuit, Connector, CircuitState};
 use std::collections::HashSet;
 use crate::wasm;
 
