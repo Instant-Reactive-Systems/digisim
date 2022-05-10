@@ -36,16 +36,16 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
         report.errors.push(ValidationError::MaxComponentsExceeded { used });
     }
 
-    if !(component_def.pins.input[0].len() == requirements.truth_table.inputs[0].len()) {
+    if !(component_def.pins.input.len() == requirements.truth_table.inputs[0].len()) {
         report.errors.push(ValidationError::InvalidComponentInterface { 
             is_input: true, 
-            expected: requirements.truth_table.inputs.len() as u32, 
+            expected: requirements.truth_table.inputs[0].len() as u32, 
             actual: component_def.pins.input.len() as u32,
         });
-    } else if !(component_def.pins.output[0].len() == requirements.truth_table.outputs[0].len()) {
+    } else if !(component_def.pins.output.len() == requirements.truth_table.outputs[0].len()) {
         report.errors.push(ValidationError::InvalidComponentInterface { 
             is_input: false, 
-            expected: requirements.truth_table.outputs.len() as u32, 
+            expected: requirements.truth_table.outputs[0].len() as u32, 
             actual: component_def.pins.output.len() as u32,
         });
     }
