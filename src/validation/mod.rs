@@ -32,7 +32,7 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
     // Validate component definition (capture all related errors and return if any of them failed
     // afterwards)
     let used = component_def.circuit.as_ref().unwrap().components.len() as u32;
-    if !(used < requirements.max_components.unwrap_or(u32::MAX)) {
+    if !(used <= requirements.max_components.unwrap_or(u32::MAX)) {
         report.errors.push(ValidationError::MaxComponentsExceeded { used });
     }
 
