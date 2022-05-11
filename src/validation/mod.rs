@@ -1,11 +1,10 @@
 mod requirements;
 mod report;
 pub use requirements::CombinationalRequirements;
-pub use report::{ValidationReport, ValidationError, JsValidationReport, JsValidationError};
+pub use report::{ValidationReport, ValidationError, JsValidationReport, ConnectorKind};
 
 use crate::component::{Led, Switch};
-use crate::sim::Event;
-use crate::{Simulation, Circuit, wasm, log};
+use crate::{Simulation, Circuit, wasm};
 use crate::circuit::registry::{SWITCH_ID, LED_ID, REGISTRY};
 use crate::component::definition::{ComponentDefinition, ComponentKind, Component};
 use crate::circuit::{CircuitDefinition, Registry, Connection, Connector};
@@ -32,19 +31,20 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
     // Validate component definition (capture all related errors and return if any of them failed
     // afterwards)
     let used = component_def.circuit.as_ref().unwrap().components.len() as u32;
-    if !(used <= requirements.max_components.unwrap_or(u32::MAX)) {
-        report.errors.push(ValidationError::MaxComponentsExceeded { used });
+    let max_allowed = requirements.max_components.unwrap_or(u32::MAX);
+    if !(used <= max_allowed) {
+        report.errors.push(ValidationError::MaxComponentsExceeded { used, max_allowed });
     }
 
     if !(component_def.pins.input.len() == requirements.truth_table.inputs[0].len()) {
         report.errors.push(ValidationError::InvalidComponentInterface { 
-            is_input: true, 
+            kind: ConnectorKind::Input,
             expected: requirements.truth_table.inputs[0].len() as u32, 
             actual: component_def.pins.input.len() as u32,
         });
     } else if !(component_def.pins.output.len() == requirements.truth_table.outputs[0].len()) {
         report.errors.push(ValidationError::InvalidComponentInterface { 
-            is_input: false, 
+            kind: ConnectorKind::Output,
             expected: requirements.truth_table.outputs[0].len() as u32, 
             actual: component_def.pins.output.len() as u32,
         });
@@ -79,7 +79,7 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
 
         // Advance the simulation
         if let Some(max_runtime) = requirements.max_runtime {
-            ctx.tick_for(max_runtime as usize);
+            ctx.tick_for((max_runtime + 2) as usize);
         } else {
             unimplemented!()
         }
