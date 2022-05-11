@@ -21,7 +21,7 @@ pub fn js_test_combinational(component_def: wasm::JsValue, requirements: wasm::J
 
 pub fn test_combinational(component_def: ComponentDefinition, requirements: CombinationalRequirements) -> ValidationReport {
     let mut report = ValidationReport::default();
-    
+
     // Validate test requirements
     if requirements.truth_table.inputs.is_empty() || requirements.truth_table.outputs.is_empty() {
         report.errors.push(ValidationError::EmptyTruthTable);

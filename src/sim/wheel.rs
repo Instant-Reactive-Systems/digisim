@@ -24,10 +24,11 @@ impl TimingWheel {
     /// # Returns
     /// The time elapsed since the advance and an iterator over the time point's events.
     pub fn advance(&mut self) -> Drain<Event> {
+        let drained = self.wheel[self.current_time as usize].drain(..);
         self.current_time += 1;
         self.current_time %= self.max_delay;
         
-        self.wheel[self.current_time as usize].drain(..)
+        drained
     }
 
     /// Schedules an event at time `current_time + delay`.
