@@ -48,8 +48,6 @@ impl Simulation {
             let component = self.circuit.components.get_mut(&event.src.component).unwrap();
             component.update(event);
 
-            log!("At elapsed {}: {:?}", self.elapsed, event);
-
             for to in self.circuit.connections[&event.src].iter() {
                 let component = self.circuit.components.get_mut(&to.component).unwrap();
                 component.set_pin(to.pin, event);
