@@ -8,7 +8,6 @@ mod params;
 pub use id::Id;
 pub use connector::Connector;
 pub use connection::Connection;
-use rassert_rs::rassert;
 pub use state::CircuitState;
 pub use registry::Registry;
 pub use definition::CircuitDefinition;
@@ -19,15 +18,16 @@ use crate::component::definition::ComponentKind;
 use crate::component::{self, Component, ComponentDefinition, Generic, Wiring};
 use DefinitionError::*;
 use self::registry::PREBUILT_REGISTRY;
+use rassert_rs::rassert;
 
 /// A self-contained collection of all components and its wiring.
 #[derive(Debug, Default)]
 pub struct Circuit {
-    pub(crate) components: HashMap<Id, Box<dyn Component>>,
-    pub(crate) output_components: Vec<Id>,
-    pub(crate) connections: HashMap<Connector, Vec<Connector>>,
+    pub components: HashMap<Id, Box<dyn Component>>,
+    pub output_components: Vec<Id>,
+    pub connections: HashMap<Connector, Vec<Connector>>,
 
-    pub(crate) rerouted_defs: HashMap<Id, ComponentDefinition>,
+    pub rerouted_defs: HashMap<Id, ComponentDefinition>,
 
     /// Maps components IDs to their corresponding component definition ID
     ///
@@ -207,9 +207,8 @@ impl Circuit {
             let input = pin_mapping.input.iter();
             let output = pin_mapping.output.iter();
             let mut pins = input.chain(output);
-
-            // TODO: Do actual error handling
-            let connectors = pins.nth(connector.pin as usize).unwrap();
+            
+            let connectors = pins.nth(connector.pin as usize).ok_or(InvalidConnector(connector))?;
             for connector in connectors {
                 self.reroute_to_concrete_impl(*connector, rerouted_connectors)?;
             }
@@ -222,19 +221,8 @@ impl Circuit {
         Ok(())
     }
 
-    fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
-        let from = self.reroute_to_concrete(connection.from)?;
-        let to: Vec<Connector> = connection.to.iter().map(|x| {
-            self.reroute_to_concrete(*x)
-        }).collect::<Result<Vec<Vec<Connector>>, _>>()?.into_iter().flatten().collect();
-
-        // Each 'from' connector needs to be connected to all the 'to' connectors
-        let mut connections: Vec<Connection> = from.iter().map(|&from| {
-            let to = to.clone();
-            Connection { from, to }
-        }).collect();
-
-        // Wire Clock components back into itself so that events repeat
+    /// Wires Clock components back into itself so that events repeat.
+    fn wire_clocks_into_itself(&self, connections: &mut Vec<Connection>) {
         connections.iter_mut()
             .filter(|x| {
                 let def_id = self.definition_mapping[&x.from.component];
@@ -251,9 +239,23 @@ impl Circuit {
                 })
             })
             .for_each(|x| {
+                // Connect to itself
                 let to_self = Connector { component: x.from.component, pin: 1 };
                 x.to.push(to_self);
             });
+    }
+
+    fn reroute_connection(&self, connection: &Connection) -> Result<Vec<Connection>, DefinitionError> {
+        let from = self.reroute_to_concrete(connection.from)?;
+        let to: Vec<Connector> = connection.to.iter().map(|x| {
+            self.reroute_to_concrete(*x)
+        }).collect::<Result<Vec<Vec<Connector>>, _>>()?.into_iter().flatten().collect();
+
+        // Each 'from' connector needs to be connected to all the 'to' connectors
+        let mut connections: Vec<Connection> = from.iter()
+            .map(|from| Connection { from: from.clone(), to: to.clone() })
+            .collect();
+        self.wire_clocks_into_itself(&mut connections);
         
         Ok(connections)
     }
@@ -288,7 +290,7 @@ pub enum DefinitionError {
     #[error("Invalid transparent component found. Context: {0}")]
     InvalidTransparentComponent(String),
 
-    #[error("Invalid connector (0.component, 0.pin) found in circuit connections.")]
+    #[error("Invalid connector {0} found in circuit connections.")]
     InvalidConnector(Connector),
 }
 
@@ -298,7 +300,6 @@ mod tests {
     use crate::{component::ComponentDefinition, Circuit};
     use super::{CircuitDefinition, Registry};
 
-    // TODO: Check number of components inserted
     #[test]
     fn nand_gate() {
         let mut registry = Registry::default();

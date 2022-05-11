@@ -6,12 +6,8 @@ use crate::{sim::Event, circuit::Params};
 pub struct Ground;
 
 impl Component for Ground {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        Some(vec![(0, false)])
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        unreachable!()
+        Some(vec![(0, false)])
     }
 
     fn update(&mut self, _event: Event) {}
@@ -41,7 +37,13 @@ impl Component for Ground {
 
     fn as_any(&self) -> &dyn Any {
         self
-    } 
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn reset(&mut self) {}
 }
 
 impl Ground {

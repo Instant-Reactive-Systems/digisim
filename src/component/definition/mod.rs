@@ -3,15 +3,17 @@ mod pins;
 mod pin_mapping;
 mod circuit;
 mod component;
+mod truth_table;
 pub use kind::ComponentKind;
 pub use pins::Pins;
 pub use pin_mapping::PinMapping;
 pub use circuit::Circuit;
 pub use component::Component;
+pub use truth_table::TruthTable;
 
 use super::Component as ComponentTrait;
 use derivative::Derivative;
-use crate::circuit::{Params, Id};
+use crate::circuit::Params;
 use crate::circuit::registry::PREBUILT_REGISTRY;
 use crate::component::Generic;
 
@@ -28,7 +30,7 @@ pub struct ComponentDefinition {
     pub pins: Pins,
     pub pin_mapping: Option<PinMapping>,
     pub circuit: Option<Circuit>,
-    pub truth_table: Option<Vec<Vec<bool>>>,
+    pub truth_table: Option<TruthTable>,
     #[serde(rename = "booleanFunction")] 
     pub expr: Option<String>,
 
@@ -38,18 +40,11 @@ pub struct ComponentDefinition {
 }
 
 impl ComponentDefinition {
+    /// Instantiates the component definition into a component.
     pub fn instantiate(&self, params: Params) -> Box<dyn ComponentTrait> {
         match self.kind {
-            ComponentKind::Builtin => {
-                PREBUILT_REGISTRY.with(|reg| {
-                    (reg.data[&self.id].factory)(params)
-                })
-            },
-            _ => {
-                Box::new(Generic {
-                    component_def: self,
-                })
-            },
+            ComponentKind::Builtin => PREBUILT_REGISTRY.with(|reg| (reg.data[&self.id].factory)(params)),
+            _ => Box::new(Generic { component_def: self }),
         }
     }
 
@@ -127,12 +122,20 @@ mod tests {
                     },
                 ],
             }),
-            truth_table: Some(vec![
-                vec![false, false, false],
-                vec![false,  true, false],
-                vec![ true, false, false],
-                vec![ true,  true,  true],
-            ]),
+            truth_table: Some(TruthTable { 
+                inputs: vec![
+                    vec![false, false],
+                    vec![false, true],
+                    vec![true, false],
+                    vec![true, true],
+                ],
+                outputs: vec![
+                    vec![false],
+                    vec![false],
+                    vec![false],
+                    vec![true],
+                ],
+            }),
             expr: Some("A and B".into()),
             parsed_expr: None,
         };

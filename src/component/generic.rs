@@ -8,10 +8,6 @@ pub struct Generic {
 }
 
 impl Component for Generic {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         unreachable!()
     }
@@ -43,6 +39,12 @@ impl Component for Generic {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn reset(&mut self) {}
 }
 
 impl Debug for Generic {

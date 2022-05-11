@@ -10,10 +10,6 @@ pub struct Wiring {
 }
 
 impl Component for Wiring {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         None
     }
@@ -53,6 +49,14 @@ impl Component for Wiring {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn reset(&mut self) {
+        self.values.iter_mut().for_each(|x| *x = false);
     }
 }
 

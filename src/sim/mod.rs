@@ -17,10 +17,9 @@ use crate::wasm;
 ///
 /// A single tick does not necessarily correspond to a single time unit.
 #[wasm::wasm_bindgen]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Simulation {
     pub(crate) circuit: Circuit,
-    pub(crate) registry: Registry,
     pub(crate) wheel: TimingWheel,
     pub(crate) elapsed: u128,
 }
@@ -30,10 +29,8 @@ impl Simulation {
     /// Create a new simulation context.
     pub fn new(config: Config) -> Self {
         Self {
-            circuit: Default::default(),
-            registry: Default::default(),
             wheel: TimingWheel::new(config.max_delay),
-            elapsed: 0,
+            ..Default::default()
         }
     }
 
@@ -42,14 +39,16 @@ impl Simulation {
         let mut activity_set = HashSet::new();
 
         // Advance the timing wheel and record the elapsed time
-        let (elapsed, events) = self.wheel.advance();
-        self.elapsed += elapsed as u128;
+        let events = self.wheel.advance();
+        self.elapsed += 1u128;
 
         // Go through all the events, update the source component, 
         // set and schedule its dependent components
         for event in events {
             let component = self.circuit.components.get_mut(&event.src.component).unwrap();
             component.update(event);
+
+            log!("At elapsed {}: {:?}", self.elapsed, event);
 
             for to in self.circuit.connections[&event.src].iter() {
                 let component = self.circuit.components.get_mut(&to.component).unwrap();
@@ -74,18 +73,31 @@ impl Simulation {
         }
     }
 
+    /// Ticks the simulation for the specified amount.
+    pub fn tick_for(&mut self, num_ticks: usize) {
+        for _ in 0..num_ticks {
+            self.tick();
+        }
+    }
+
     /// Initializes the simulation by inserting initial events from all components.
     pub fn init(&mut self) {
         for (&component_id, component) in self.circuit.components.iter() {
-            if let Some(output) = component.initial_evaluate() {
-                for (pin_id, value) in output {
-                    let src = Connector::new(component_id, pin_id);
-                    let event = Event::new(value, src);
+            if component.is_source() {
+                if let Some(output) = component.evaluate() {
+                    for (pin_id, value) in output {
+                        let src = Connector::new(component_id, pin_id);
+                        let event = Event::new(value, src);
 
-                    self.wheel.schedule(0, event);
+                        self.wheel.schedule(0, event);
+                    }
                 }
             }
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.circuit.components.values_mut().for_each(|x| x.reset());
     }
 
     /// Returns a JSON object containing the circuit state.
@@ -101,17 +113,10 @@ impl Simulation {
 
     pub fn set_circuit(&mut self, circuit: wasm::JsValue) {
         let circuit_def = circuit.into_serde().expect("Expected the circuit definition to be in correct format.");
-        self.circuit = Circuit::from_definition(&self.registry, circuit_def).unwrap();
-    }
-
-    pub fn set_registry(&mut self, registry: wasm::JsValue) {
-        let registry = registry.into_serde().expect("Expected the registry to be in correct format.");
-        self.registry = registry;
-    }
-
-    pub fn update_registry(&mut self, definition: wasm::JsValue) {
-        let component_def = definition.into_serde().expect("Expected the component definition to be in correct format");
-        self.registry.insert(component_def);
+        REGISTRY.with(|reg| {
+            let reg = reg.lock();
+            self.circuit = Circuit::from_definition(&reg, circuit_def).unwrap();
+        });
     }
 
     pub fn insert_input_event(&mut self, event: wasm::JsValue) -> Result<(), String> {

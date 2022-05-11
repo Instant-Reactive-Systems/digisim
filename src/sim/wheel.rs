@@ -38,3 +38,13 @@ impl TimingWheel {
     }
 }
 
+impl Default for TimingWheel {
+    fn default() -> Self {
+        Self {
+            max_delay: 1024,
+            current_time: 0,
+            wheel: vec![Default::default(); 1024],
+        }
+    }
+}
+

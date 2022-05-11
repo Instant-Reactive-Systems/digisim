@@ -1,6 +1,7 @@
 use crate::{util::*, circuit::Params};
 use super::Component;
 use crate::sim::Event;
+use std::any::Any;
 
 #[derive(Debug, Clone)]
 pub struct GenericDisplay {
@@ -13,10 +14,6 @@ pub struct GenericDisplay {
 }
 
 impl Component for GenericDisplay {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         None
 	}
@@ -63,9 +60,20 @@ impl Component for GenericDisplay {
         true
     }
 
-	fn as_any(&self) -> &dyn std::any::Any {
+	fn as_any(&self) -> &dyn Any {
 		self
 	}
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+    
+    fn reset(&mut self) {
+        self.enable = false;
+        self.address_x.clear();
+        self.address_y.clear();
+        self.pixels.iter_mut().for_each(|bits| bits.clear());
+    }
 }
 
 impl Default for GenericDisplay {

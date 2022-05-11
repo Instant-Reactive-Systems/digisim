@@ -4,14 +4,10 @@ use crate::{sim::Event, circuit::Params};
 
 #[derive(Debug, Clone, Default)]
 pub struct Led {
-    value: bool,
+    pub(crate) value: bool,
 }
 
 impl Component for Led {
-    fn initial_evaluate(&self) -> Option<Vec<(u32, bool)>> {
-        None
-    }
-
     fn evaluate(&self) -> Option<Vec<(u32, bool)>> {
         None
     }
@@ -44,6 +40,14 @@ impl Component for Led {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn reset(&mut self) {
+        self.value = false;
     }
 }
 
