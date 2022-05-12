@@ -22,7 +22,6 @@ pub enum ValidationError {
         expected: u32,
         actual: u32,
     },
-    EmptyTruthTable,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize)]

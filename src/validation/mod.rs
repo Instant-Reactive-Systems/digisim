@@ -23,10 +23,7 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
     let mut report = ValidationReport::default();
 
     // Validate test requirements
-    if requirements.truth_table.inputs.is_empty() || requirements.truth_table.outputs.is_empty() {
-        report.errors.push(ValidationError::EmptyTruthTable);
-        return report;
-    }
+    assert!(requirements.truth_table.inputs.is_empty() || requirements.truth_table.outputs.is_empty(), "Truth table is empty!");
 
     // Validate component definition (capture all related errors and return if any of them failed
     // afterwards)
