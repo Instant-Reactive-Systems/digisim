@@ -6,6 +6,7 @@ pub enum ConnectorKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 #[serde(tag = "type", content = "data")]
 pub enum ValidationError {
     IncorrectOutputs {
