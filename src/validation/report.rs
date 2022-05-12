@@ -1,5 +1,3 @@
-use crate::wasm;
-
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConnectorKind {
@@ -42,21 +40,6 @@ impl ValidationReport {
     
     pub fn failure(&self) -> bool {
         !self.success()
-    }
-}
-
-
-
-#[wasm::wasm_bindgen(js_class = ValidationReport, getter_with_clone)]
-pub struct JsValidationReport {
-    pub errors: wasm::Array,
-}
-
-impl Into<JsValidationReport> for ValidationReport {
-    fn into(self) -> JsValidationReport {
-        JsValidationReport {
-            errors: wasm::JsValue::from_serde(&self.errors).unwrap().into(),
-        }
     }
 }
 

@@ -1,7 +1,7 @@
 mod requirements;
 mod report;
 pub use requirements::CombinationalRequirements;
-pub use report::{ValidationReport, ValidationError, JsValidationReport, ConnectorKind};
+pub use report::{ValidationReport, ValidationError, ConnectorKind};
 
 use crate::component::{Led, Switch};
 use crate::{Simulation, Circuit, wasm};
@@ -12,11 +12,11 @@ use ConversionError::*;
 use rassert_rs::rassert;
 
 #[wasm::wasm_bindgen(js_name = "test_combinational")]
-pub fn js_test_combinational(component_def: wasm::JsValue, requirements: wasm::JsValue) -> JsValidationReport {
+pub fn js_test_combinational(component_def: wasm::JsValue, requirements: wasm::JsValue) -> wasm::JsValue {
     let component_def = component_def.into_serde().expect("Expected the component definition to be in correct format.");
     let requirements = requirements.into_serde().expect("Expected the combinational requirements to be in correct format.");
 
-    test_combinational(component_def, requirements).into()
+    wasm::JsValue::from_serde(&test_combinational(component_def, requirements)).unwrap()
 }
 
 pub fn test_combinational(component_def: ComponentDefinition, requirements: CombinationalRequirements) -> ValidationReport {
