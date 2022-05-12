@@ -6,15 +6,8 @@ pub enum ConnectorKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub enum ValidationErrorKind {
-    IncorrectOutputs,
-    MaxComponentsExceeded,
-    InvalidComponentInterface,
-    EmptyTruthTable,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub enum ValidationErrorData {
+#[serde(tag = "type")]
+pub enum ValidationError {
     IncorrectOutputs {
         input: Vec<bool>,
         expected: Vec<bool>,
@@ -30,12 +23,6 @@ pub enum ValidationErrorData {
         actual: u32,
     },
     EmptyTruthTable,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct ValidationError {
-    kind: ValidationErrorKind,
-    data: ValidationErrorData,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, serde::Serialize)]
@@ -54,29 +41,6 @@ impl ValidationReport {
     
     pub fn failure(&self) -> bool {
         !self.success()
-    }
-}
-
-impl Into<ValidationError> for ValidationErrorData {
-    fn into(self) -> ValidationError {
-        match self {
-            Self::IncorrectOutputs { .. } => ValidationError {
-                kind: ValidationErrorKind::IncorrectOutputs,
-                data: self,
-            },
-            Self::MaxComponentsExceeded { .. } => ValidationError {
-                kind: ValidationErrorKind::MaxComponentsExceeded,
-                data: self,
-            },
-            Self::InvalidComponentInterface { .. } => ValidationError {
-                kind: ValidationErrorKind::InvalidComponentInterface,
-                data: self,
-            },
-            Self::EmptyTruthTable { .. } => ValidationError {
-                kind: ValidationErrorKind::EmptyTruthTable,
-                data: self,
-            },
-        }
     }
 }
 
