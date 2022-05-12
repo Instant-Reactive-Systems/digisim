@@ -1,7 +1,7 @@
 mod requirements;
 mod report;
 pub use requirements::CombinationalRequirements;
-pub use report::{ValidationReport, ValidationError, ConnectorKind};
+pub use report::{ValidationReport, ValidationError, ConnectorKind, ValidationErrorKind, ValidationErrorData};
 
 use crate::component::{Led, Switch};
 use crate::{Simulation, Circuit, wasm};
@@ -24,7 +24,7 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
 
     // Validate test requirements
     if requirements.truth_table.inputs.is_empty() || requirements.truth_table.outputs.is_empty() {
-        report.errors.push(ValidationError::EmptyTruthTable);
+        report.errors.push(ValidationErrorData::EmptyTruthTable.into());
         return report;
     }
 
@@ -33,21 +33,21 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
     let used = component_def.circuit.as_ref().unwrap().components.len() as u32;
     let max_allowed = requirements.max_components.unwrap_or(u32::MAX);
     if !(used <= max_allowed) {
-        report.errors.push(ValidationError::MaxComponentsExceeded { used, max_allowed });
+        report.errors.push(ValidationErrorData::MaxComponentsExceeded { used, max_allowed }.into());
     }
 
     if !(component_def.pins.input.len() == requirements.truth_table.inputs[0].len()) {
-        report.errors.push(ValidationError::InvalidComponentInterface { 
+        report.errors.push(ValidationErrorData::InvalidComponentInterface { 
             kind: ConnectorKind::Input,
             expected: requirements.truth_table.inputs[0].len() as u32, 
             actual: component_def.pins.input.len() as u32,
-        });
+        }.into());
     } else if !(component_def.pins.output.len() == requirements.truth_table.outputs[0].len()) {
-        report.errors.push(ValidationError::InvalidComponentInterface { 
+        report.errors.push(ValidationErrorData::InvalidComponentInterface { 
             kind: ConnectorKind::Output,
             expected: requirements.truth_table.outputs[0].len() as u32, 
             actual: component_def.pins.output.len() as u32,
-        });
+        }.into());
     }
 
     // If any of the component definition validation failed, early exit
@@ -94,11 +94,11 @@ pub fn test_combinational(component_def: ComponentDefinition, requirements: Comb
 
         // Process result
         if expected_outputs != &actual_outputs {
-            report.errors.push(ValidationError::IncorrectOutputs {
+            report.errors.push(ValidationErrorData::IncorrectOutputs {
                 input: inputs.clone(),
                 expected: expected_outputs.clone(),
                 actual: actual_outputs,
-            });
+            }.into());
         }
 
         // Reset simulation state
