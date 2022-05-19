@@ -9,6 +9,7 @@ mod source;
 mod clock;
 mod led;
 mod display;
+mod audio_listener;
 
 pub use definition::ComponentDefinition;
 pub use tristate::Tristate;
@@ -21,6 +22,7 @@ pub use source::Source;
 pub use clock::Clock;
 pub use led::Led;
 pub use display::GenericDisplay;
+pub use audio_listener::AudioListener;
 
 use std::any::Any;
 use std::fmt::Debug;
