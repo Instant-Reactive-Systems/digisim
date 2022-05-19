@@ -1,12 +1,12 @@
 mod event;
 mod wheel;
-mod config;
+mod settings;
 mod user_event;
 
 pub use event::Event;
 pub use user_event::{UserEvent, UserEventError};
 pub use wheel::TimingWheel;
-pub use config::Config;
+pub use settings::Settings;
 
 use crate::circuit::registry::REGISTRY;
 use crate::circuit::{Circuit, Connector, CircuitState};
@@ -19,6 +19,7 @@ use crate::wasm;
 #[wasm::wasm_bindgen]
 #[derive(Debug, Default)]
 pub struct Simulation {
+    pub(crate) settings: Settings,
     pub(crate) circuit: Circuit,
     pub(crate) wheel: TimingWheel,
     pub(crate) elapsed: u128,
@@ -27,9 +28,10 @@ pub struct Simulation {
 #[wasm::wasm_bindgen]
 impl Simulation {
     /// Create a new simulation context.
-    pub fn new(config: Config) -> Self {
+    pub fn new(settings: Settings) -> Self {
         Self {
-            wheel: TimingWheel::new(config.max_delay),
+            settings,
+            wheel: TimingWheel::new(settings.max_delay),
             ..Default::default()
         }
     }
@@ -115,6 +117,12 @@ impl Simulation {
             let reg = reg.lock();
             self.circuit = Circuit::from_definition(&reg, circuit_def).unwrap();
         });
+    }
+    
+    pub fn set_settings(&mut self, settings: wasm::JsValue) {
+        let settings = settings.into_serde().expect("Expected the simulation settings to be in correct format.");
+        self.settings = settings;
+        self.wheel.set_max_delay(settings.max_delay);
     }
 
     pub fn insert_input_event(&mut self, event: wasm::JsValue) -> Result<(), String> {

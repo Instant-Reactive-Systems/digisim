@@ -36,6 +36,12 @@ impl TimingWheel {
         let scheduled_time = (self.current_time + delay) % self.max_delay;
         self.wheel[scheduled_time as usize].push(event);
     }
+
+    /// Sets the max delay of the timing wheel.
+    pub fn set_max_delay(&mut self, max_delay: u32) {
+        self.max_delay = max_delay;
+        self.wheel.resize(max_delay as usize, Default::default());
+    }
 }
 
 impl Default for TimingWheel {
