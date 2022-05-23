@@ -110,8 +110,12 @@ impl Circuit {
             for connection in component_def.circuit.as_ref().unwrap().connections.iter() {
                 let rerouted_connections = circuit.reroute_connection(connection)?;
 
-                rerouted_connections.into_iter().for_each(|conn| {
-                    circuit.connections.insert(conn.from, conn.to);
+                rerouted_connections.into_iter().for_each(|mut conn| {
+                    if let Some(to) = circuit.connections.get_mut(&conn.from) {
+                        to.append(&mut conn.to);
+                    } else {
+                        circuit.connections.insert(conn.from, conn.to);
+                    }
                 });
             }
         }

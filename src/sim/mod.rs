@@ -11,7 +11,7 @@ pub use settings::Settings;
 use crate::circuit::registry::REGISTRY;
 use crate::circuit::{Circuit, Connector, CircuitState};
 use std::collections::HashSet;
-use crate::wasm;
+use crate::{wasm, log};
 
 /// Simulation context
 ///
