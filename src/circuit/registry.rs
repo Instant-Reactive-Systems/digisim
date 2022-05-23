@@ -79,6 +79,7 @@ pub const GROUND_ID: i32 = -4;
 pub const SOURCE_ID: i32 = -5;
 pub const SWITCH_ID: i32 = -6;
 pub const LED_ID: i32 = -7;
+pub const AUDIO_LISTENER_ID: i32 = -8;
 
 impl Default for PrebuiltRegistry {
     fn default() -> Self {
@@ -223,6 +224,26 @@ impl Default for PrebuiltRegistry {
                 parsed_expr: None,
             },
             factory: Box::new(|params| Box::new(Led::from_params(params))),
+        });
+        
+        // AudioListener
+        data.insert(-8, PrebuiltEntry {
+            def: ComponentDefinition {
+                id: -8,
+                name: "AudioListener".into(),
+                desc: "Component that listens to audio frequency and emits ON if above threshold.".into(),
+                kind: ComponentKind::Builtin,
+                pins: Pins {
+                    input: vec!["Y".into()],
+                    output: vec![],
+                },
+                pin_mapping: None,
+                circuit: None,
+                truth_table: None,
+                expr: None,
+                parsed_expr: None,
+            },
+            factory: Box::new(|params| Box::new(AudioListener::from_params(params))),
         });
 
         Self {
