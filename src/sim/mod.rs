@@ -98,6 +98,7 @@ impl Simulation {
 
     pub fn reset(&mut self) {
         self.circuit.components.values_mut().for_each(|x| x.reset());
+        self.wheel.reset();
     }
 
     /// Returns a JSON object containing the circuit state.
@@ -117,6 +118,7 @@ impl Simulation {
             let reg = reg.lock();
             self.circuit = Circuit::from_definition(&reg, circuit_def).unwrap();
         });
+        self.wheel.reset();
     }
     
     pub fn set_settings(&mut self, settings: wasm::JsValue) {

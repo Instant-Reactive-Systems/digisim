@@ -42,6 +42,10 @@ impl TimingWheel {
         self.max_delay = max_delay;
         self.wheel.resize(max_delay as usize, Default::default());
     }
+
+    pub fn reset(&mut self) {
+        self.wheel.iter_mut().for_each(|x| x.clear());
+    }
 }
 
 impl Default for TimingWheel {
